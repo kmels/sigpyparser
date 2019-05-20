@@ -3,7 +3,7 @@ import bson
 import json
 
 from datetime import datetime
-from signal_parser.consensus import CalificacionConsensus
+from signal_parser.consensus import *
 
 def myhash(t : str):
     """Returns a 12-digit integer hash using sha256"""
@@ -136,7 +136,7 @@ def valid_setup(t,e,s,tp):
 
 class Signal (dict):
     def __init__(self, entry, sl, tp, date, sign, username, pair,
-                    inserted_at = None, calificaciones = []):
+                    inserted_at = None, outcomes = []):
         self['entry'] = entry
         self['sl'] = sl
         self['tp'] = tp
@@ -144,10 +144,10 @@ class Signal (dict):
         self['sign'] = sign
         self['pair'] = pair
         self['username'] = username
-        if not calificaciones:
-            calificaciones = []
-        self['calificaciones'] = calificaciones
-        self.consensus = CalificacionConsensus(calificaciones)
+        if outcomes is None:
+            outcomes = []
+        self['outcomes'] = outcomes
+        self.consensus = OutcomeConsensus(outcomes)
         mt4_date = date.strftime("%Y.%m.%d %H:%M")
         if not inserted_at:
             inserted_at = date.strftime("%Y.%m.%d %H:%M:%S")
@@ -163,7 +163,6 @@ class Signal (dict):
         self['odds'] = self.odds()
         #self['tp_pips'] = self.tp_pips()
         self['sl_pips'] = self.sl_pips()
-
 
     def odds(self):
         payout_odds = (float(self['tp'])-float(self['entry']))/(float(self['entry'])-float(self['sl']))
@@ -186,9 +185,17 @@ class Signal (dict):
             sl_pips /= 100
         return sl_pips
 
+    def tp_pips(self):
+        tp_pips = abs(float(self['entry'])-float(self['tp'])) * 100
+        if ('XAU' in self['pair']):
+            tp_pips /= 10
+        if (not 'JPY' in self['pair'] and not 'XAU' in self['pair'] and not 'BTC' in self['pair']):
+            tp_pips *= 100
+        if ('BTC' in self['pair']):
+            tp_pips /= 100
+        return tp_pips
+
     def is_payout_safe(self):
-        #tp_pips = abs(float(self['entry'])-float(self['tp']))
-        #print("SL Pips: ", self.sl_pips())
         if 'BTC' in self['pair']:
             return True
         else:
@@ -205,7 +212,7 @@ class Signal (dict):
             it = json.loads(dumped,
                 object_hook=mt4_date_parser, parse_float=rounded)
             s = Signal(it['entry'],it['sl'],it['tp'],it['date'],it['sign'],it['username'],
-                            it['pair'], it.get('inserted_at'), it.get('calificaciones'))
+                            it['pair'], it.get('inserted_at'), it.get('outcomes'))
             for k in it.keys():
                 s[k] = it[k]
             return s

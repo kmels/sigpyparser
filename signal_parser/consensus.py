@@ -10,7 +10,27 @@ def has_consensus(_vs):
     _freqs = [(_freq(_vs, v)) for v in _vs]
     return vs == 1 or (vs > 1 and vs < len(_vs) and cardinality(_freqs) != 1)
 
-class CalificacionConsensus(list):
+class Outcome(dict):
+    def __init__(self, hash, signer, pair, published_on, opened_on, invalidated_on,
+                    last_checked, last_available, event, state):
+        self['hash'] = hash
+        self['signer'] = signer
+        self['pair'] = pair
+        self['published_on'] = published_on
+        self['opened_on'] = opened_on
+        self['invalidated_on'] = invalidated_on
+        self['last_checked'] = last_checked
+        self['last_available'] = last_available
+        self['event'] = event
+        self['state'] = state
+
+    @staticmethod
+    def from_dict(it: dict):
+        return Outcome(it['hash'],it['signer'],it['pair'], it['published_on'],
+                            it['opened_on'],it['invalidated_on'],it['last_checked'], it['last_available'],
+                            it['event'],it['state'])
+
+class OutcomeConsensus(list):
     def __init__(self, cs=[]):
         if type(cs) is not list:
             raise ValueError()

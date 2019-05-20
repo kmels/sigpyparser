@@ -5,3 +5,8 @@ def fx_tests_suite():
     loader = unittest.TestLoader()
     suite = loader.loadTestsFromModule(fx_test)
     return suite
+
+def outcome_tests_suite():
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestOutcome)
+    unittest.TextTestRunner(verbosity=2).run(suite)
+    
