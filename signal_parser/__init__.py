@@ -46,26 +46,21 @@ valid_buy = lambda t,entry,sl,tp: t is "BUY" and entry > sl and tp > entry
 valid_sell = lambda t,entry,sl,tp: t is "SELL" and entry < sl and tp < entry
 
 def parseSignal(t : str, d: datetime, p : str):
-    #Check if it starts with a date
     if t is None:
-        return None
+        return Noise("Empty text")
 
     text = normalizeText(t)
-
-    #print("Normalized text: " + text)
-
     isBuy = 'BUY' in text
     isSell = 'SELL' in text
     hasType = isBuy or isSell
 
-    pair = getValidPair(text)
-    if not (hasType and pair):
-        if not pair:
-            return Noise("Missing pair")
-        if not hasType:
-            return Noise("Missing type")
+    if not hasType:
+        return Noise("Missing type")
 
-        return False
+    pair = getValidPair(text)
+    if not pair:
+        return Noise("Missing pair")
+
     _tokens = text.split(" ")
     if isBuy and isSell:
         _type = "BUY" if text.index("BUY") < text.index("SELL") else "SELL"
@@ -81,15 +76,11 @@ def parseSignal(t : str, d: datetime, p : str):
         for ref_entry in _prices:
             points_away = pips_diff(price, ref_entry, pair)
             likely = points_away < 1500 and points_away >= 0
-            #print(ref_entry,'..',price,'..',likely,"..", points_away)
             if likely:
                 sims += 1
-        #print("\t",sims)
         return sims >= 3
 
-    #print("Prices: " + str(_prices))
     likely_prices = [p for p in _prices if is_likely_price(p)]
-    #print("Likely prices: " + str(likely_prices))
 
     if len(likely_prices) != 3:
         if not 'TP' in text:
@@ -110,7 +101,7 @@ def parseSignal(t : str, d: datetime, p : str):
 
     setup = getValidSetup(_type, pair, _tokens, [], div)
 
-    def mkSafeSetup(s):
+    def mkSafeSetup(s : dict) -> dict:
         if not setup:
             return False
         setup['date'] = d
@@ -128,15 +119,15 @@ def parseSignal(t : str, d: datetime, p : str):
 
     return mkSafeSetup(setup)
 
-def valid_setup(t,e,s,tp):
+def valid_setup(t : str, e : float, s : float, tp : float) -> bool:
     """"Validate buy or sell prices."""
     if float(tp) <=0 or float(s) <= 0 or float(e) <= 0:
         return False
     return valid_buy(t,e,s,tp) or valid_sell(t,e,s,tp)
 
 class Signal (dict):
-    def __init__(self, entry, sl, tp, date, sign, username, pair,
-                    inserted_at = None, outcomes = []):
+    def __init__(self, entry : float, sl : float, tp : float, date : datetime, sign : str, username : str, pair : str,
+                    inserted_at : datetime = None, outcomes : list = []):
         self['entry'] = entry
         self['sl'] = sl
         self['tp'] = tp
@@ -164,7 +155,7 @@ class Signal (dict):
         #self['tp_pips'] = self.tp_pips()
         self['sl_pips'] = self.sl_pips()
 
-    def odds(self):
+    def odds(self) -> float:
         payout_odds = (float(self['tp'])-float(self['entry']))/(float(self['entry'])-float(self['sl']))
         return float("%.1f" % payout_odds)
 
@@ -175,7 +166,7 @@ class Signal (dict):
             mt4_date, self['pair'], self['sign'], float(self['entry']), float(self['sl']), float(self['tp'])
         )
 
-    def sl_pips(self):
+    def sl_pips(self) -> int:
         sl_pips = abs(float(self['entry'])-float(self['sl'])) * 100
         if ('XAU' in self['pair']):
             sl_pips /= 10
@@ -185,7 +176,7 @@ class Signal (dict):
             sl_pips /= 100
         return sl_pips
 
-    def tp_pips(self):
+    def tp_pips(self) -> int:
         tp_pips = abs(float(self['entry'])-float(self['tp'])) * 100
         if ('XAU' in self['pair']):
             tp_pips /= 10
@@ -195,14 +186,14 @@ class Signal (dict):
             tp_pips /= 100
         return tp_pips
 
-    def is_payout_safe(self):
+    def is_payout_safe(self) -> bool:
         if 'BTC' in self['pair']:
             return True
         else:
             return self.odds() < 25.0 and self.odds() >= 0.1 and self['sl_pips'] <= 500 and self['sl_pips'] >= 10
 
     @staticmethod
-    def from_dict(unrounded: dict):
+    def from_dict(unrounded: dict) -> dict:
 
         try:
             if '_id' in unrounded:
@@ -228,21 +219,10 @@ class Signal (dict):
             raise e
 
     @staticmethod
-    def dumps_from_dict(it: dict):
+    def dumps_from_dict(it: dict) -> str:
         return json.dumps(Signal.from_dict(it),
             default = mt4_date_converter)
 
-    def from_trackrecord(it: dict):
-        try:
-            date_str = it['Day'] + ' ' + it['Time']
-            import datetime
-            date = datetime.datetime.strptime(date_str,'%d/%m/%Y %H:%M')
-            return Signal(
-                it['Entry'], it['SL'], it['TP'], date, it['Direction'].upper(), it['Source'], it['Base']+it['Counter']
-            )
-        except:
-            print("Failed: %s " % str(it))
-            return None
     def eve(self):
         import datetime
         eve = self.copy()
@@ -274,67 +254,6 @@ class Signal (dict):
         _str += " 🎲 Payoff: " + ("%.1f" % self.odds())
         return _str
 
-    def to_telegram_str_prev(self):
-        _str = "**" + self['username'] + "**\n"
-        _str += self['mt4_rep'][0:16] + "\n"
-        _str += flags_sym_(self['pair'][0:3]) + " "
-        _str += self['pair'] + " "
-        _str += flags_sym_(self['pair'][-3:]) + "\n"
-
-        point_sym = "📈" if self['sign'] is "BUY" else '📉'
-        _str += point_sym + " " + self['sign'] + " " + str(self['entry'])
-
-        _str += "\n🔵 TP " + str(self['tp'])
-        _str += " (%.0f)" % pips_diff(self['tp'],self['entry'],self['pair'])
-        _str += "\n🔴 SL " + str(self['sl'])
-        _str += " (%.0f)" % pips_diff(self['sl'],self['entry'],self['pair'])
-        _str += "\nPayoff: %.1f" % self.odds()
-
-        if 'track_record' in self:
-            kelly = self['track_record']
-            _str += "\n_Win Ratio:_ %.3f" % kelly['pair_winratio']
-
-            kelly_ratio = (kelly['pair_winratio']*(self.odds()+1)-1)/self.odds()
-            _str += "\n_Kelly:_ %.3f" % kelly_ratio
-            if kelly_ratio > 0:
-                _str += " ✔️"
-            else:
-                _str += " 🚫"
-
-            pair_buys_winratio = (kelly['pair_buys_winratio']*(self.odds()+1)-1)/self.odds()
-            pair_sells_winratio = (kelly['pair_sells_winratio']*(self.odds()+1)-1)/self.odds()
-            if kelly['pair_closed_avgduration'] > 0:
-                _str += "\n_Duración promedio:_ %.1f días" % kelly['pair_closed_avgduration']
-
-            if kelly['pair_nclosed'] > 0:
-                _str += "\n_Cerradas:_ %d trades" % kelly['pair_nclosed']
-
-                if self['sign'] == 'BUY':
-                    x = "\n_Cerradas BUY:_ %d (Win Ratio: %.3f, Kelly: %.2f)" % (kelly['pair_nclosed_buys'],kelly['pair_buys_winratio'],pair_buys_winratio)
-                    _str += x
-                    if pair_buys_winratio > 0:
-                        _str += " ✔️" + "\n"
-                    else:
-                        _str += " 🚫 " + "\n"
-                else:
-                    x = "\n_Cerradas SELL:_ %d (_Win Ratio:_ %.3f, _Kelly:_ %.2f)" % (kelly['pair_nclosed_sells'],kelly['pair_sells_winratio'],pair_sells_winratio)
-                    _str += x
-                    if pair_sells_winratio > 0:
-                        _str += " ✔️ " + "\n"
-                    else:
-                        _str += " 🚫 " + "\n"
-
-            expectancy = kelly['provider_winratio']*kelly['provider_avgpayout'] - (1-kelly['provider_winratio'])
-            _str += "_Overall (%d) Provider Expectancy_: %.3f (_Win Ratio:_ %.3f, _Avg Payoff:_ %.3f)" % (kelly['provider_nclosed'],expectancy,kelly['provider_winratio'],kelly['provider_avgpayout'])
-
-            if expectancy > 0:
-                _str += " ✔️ "
-            else:
-                _str += " 🚫 "
-
-        #_str += "\n_ID:_  " + str(self['hash'])
-        return _str
-
     def to_slack_str(self):
         _str = self['mt4_rep'][0:16] + "\n"
         _str += flags_sym(self['pair'][0:3]) + " "
@@ -348,48 +267,6 @@ class Signal (dict):
         _str += "\n:x: " + str(self['sl'])
 
         _str += "\n_RR:_ %.2f" % self.odds()
-        if 'track_record' in self:
-            kelly = self['track_record']
-            _str += "\n_Win Ratio:_ %.3f" % kelly['pair_winratio']
-
-            kelly_ratio = (kelly['pair_winratio']*(self.odds()+1)-1)/self.odds()
-            _str += "\n_Kelly:_ %.3f" % kelly_ratio
-            if kelly_ratio > 0:
-                _str += " :heavy_check_mark: "
-            else:
-                _str += " :no_entry_sign: "
-
-            pair_buys_winratio = (kelly['pair_buys_winratio']*(self.odds()+1)-1)/self.odds()
-            pair_sells_winratio = (kelly['pair_sells_winratio']*(self.odds()+1)-1)/self.odds()
-            if kelly['pair_closed_avgduration'] > 0:
-                _str += "\n_Duración promedio:_ %.1f días" % kelly['pair_closed_avgduration']
-
-            if kelly['pair_nclosed'] > 0:
-                _str += "\n_Cerradas:_ %d trades" % kelly['pair_nclosed']
-
-                if self['sign'] == 'BUY':
-                    x = "\n_Cerradas BUY:_ %d (Win Ratio: %.3f, Kelly: %.2f)" % (kelly['pair_nclosed_buys'],kelly['pair_buys_winratio'],pair_buys_winratio)
-                    _str += x
-                    if pair_buys_winratio > 0:
-                        _str += " :heavy_check_mark: " + "\n"
-                    else:
-                        _str += " :no_entry_sign: " + "\n"
-                else:
-                    x = "\n_Cerradas SELL:_ %d (_Win Ratio:_ %.3f, _Kelly:_ %.2f)" % (kelly['pair_nclosed_sells'],kelly['pair_sells_winratio'],pair_sells_winratio)
-                    _str += x
-                    if pair_sells_winratio > 0:
-                        _str += " :heavy_check_mark: " + "\n"
-                    else:
-                        _str += " :no_entry_sign: " + "\n"
-
-            expectancy = kelly['provider_winratio']*kelly['provider_avgpayout'] - (1-kelly['provider_winratio'])
-            _str += "_Overall (%d) Provider Expectancy_: %.3f (_Win Ratio:_ %.3f, _Avg Payoff:_ %.3f)" % (kelly['provider_nclosed'],expectancy,kelly['provider_winratio'],kelly['provider_avgpayout'])
-
-            if expectancy > 0:
-                _str += " :heavy_check_mark: "
-            else:
-                _str += " :no_entry_sign: "
-
         _str += "\n_ID:_  " + str(self['hash'])
         return _str
 
@@ -411,22 +288,21 @@ currencies = ['AUD','CAD','CHF','EUR','GBP','JPY','NZD','USD','XAU','WTI','BTC']
 pairs = [a+b for a in currencies[:-3] for b in currencies[:-3] if a is not b]
 pairs.extend(['BTCUSD','WTIUSD','XAUUSD'])
 
-def getValidPair(text):
-    # test exact 6 letters
+def getValidPair(text : str) -> str:
     sixletters = [t for t in text.split(" ") if len(t) is 6]
     found_pairs = [p for p in sixletters if p[:3]
              in currencies and p[-3:] in currencies]
     if len(found_pairs) > 0 and pairs[0] in pairs:
         return found_pairs[0]
-    return False
+    return None
 
-def isPrice(t):
+def isPrice(t: str) -> bool:
     try:
         return float(t) > 0
     except ValueError:
         return False
 
-def getPriceFollowing(tokens, prevtoken, likely_prices, fallback_index = 0):
+def getPriceFollowing(tokens : list, prevtoken : str, likely_prices : list, fallback_index : int = 0) -> float:
     if prevtoken in tokens:
         i = next(i for i,t in enumerate(tokens) if prevtoken in t) #fails if prevtoken is not in t
     else:
@@ -439,12 +315,10 @@ def getPriceFollowing(tokens, prevtoken, likely_prices, fallback_index = 0):
         return nextPrices[0] if len(nextPrices) > 0 else 0.0
     return 0.0
 
-def getValidSetup(_type, pair, tokens, likely_prices, div = 1):
+def getValidSetup(_type : str, pair: str, tokens: list, likely_prices: list, div : int = 1) -> dict:
     _prices = [t for t in tokens if isPrice(t)]
 
-    #print("Getting valid setup ")
     entry = getPriceFollowing(tokens, pair, likely_prices)
-    #if "TP" in tokens
     tp = getPriceFollowing(tokens, "TP", likely_prices)
     sl = getPriceFollowing(tokens, "SL", likely_prices)
 
@@ -455,6 +329,7 @@ def getValidSetup(_type, pair, tokens, likely_prices, div = 1):
 
     if valid_setup(_type, entry, sl, tp):
         return { 'entry': entry, 'sl': sl, 'tp': tp }
+
     if "ENTRY" in tokens:
         entry = getPriceFollowing(tokens, "ENTRY", likely_prices)
         tp = getPriceFollowing(tokens, "TP", likely_prices)
@@ -468,12 +343,10 @@ def getValidSetup(_type, pair, tokens, likely_prices, div = 1):
     if valid_setup(_type, entry, sl, tp):
         return { 'entry': entry, 'sl': sl, 'tp': tp }
 
-    #print("Likely prices: " + str(len(likely_prices)) + " ... " + str(('SL' in tokens and 'TP' in tokens)))
     if len(likely_prices) == 3 and not ('SL' in tokens and 'TP' in tokens):
         entry = likely_prices[0]
         sl = likely_prices[1]
         tp = likely_prices[2]
-        #print("Trying")
         if valid_setup(_type, entry, sl, tp):
             return { 'entry': entry, 'sl': sl, 'tp': tp }
         if valid_setup(_type, entry, tp, sl):
@@ -484,7 +357,7 @@ def getValidSetup(_type, pair, tokens, likely_prices, div = 1):
     return False
 
 import re
-def normalizeText(t):
+def normalizeText(t: str) -> str:
     t = t.upper()
     t = t.encode('unicode-escape').decode('utf-8', 'strict')
     t = re.sub("\\\\U........", "", t)
@@ -492,7 +365,6 @@ def normalizeText(t):
     t = re.sub("\\\\U....", "", t)
     t = re.sub("\\\\n", " ", t)
     try:
-        #Inside text pair
         pair = next(iter([p for p in pairs if p in t]))
         t = re.sub("%s"%pair," %s " % pair, t)
     except StopIteration as e:
@@ -560,7 +432,7 @@ def normalizeText(t):
 
     return t
 
-def pips_diff(p1,p2,pair):
+def pips_diff(p1: float, p2: float, pair: str) -> int:
     pips =  abs(p1 - p2)*100
     if not 'JPY' in pair and not 'XAU' in pair:
         pips *= 100
@@ -569,7 +441,3 @@ def pips_diff(p1,p2,pair):
     if 'BTC' in pair:
         pips /= 100000
     return pips
-
-def main():
-    """Entry point for the application script"""
-    print("Call your main application code here")
