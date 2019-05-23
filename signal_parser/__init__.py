@@ -45,7 +45,7 @@ def mt4_date_parser(dct):
 valid_buy = lambda t,entry,sl,tp: t is "BUY" and entry > sl and tp > entry
 valid_sell = lambda t,entry,sl,tp: t is "SELL" and entry < sl and tp < entry
 
-def parseSignal(t : str, d: datetime, p : str):
+def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
     if t is None:
         return Noise("Empty text")
 

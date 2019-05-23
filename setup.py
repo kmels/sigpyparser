@@ -25,7 +25,11 @@ setuptools.setup(
          'Operating System :: OS Independent',
     ],
     packages=setuptools.find_packages(exclude=['tests']),
+    package_data={
+        'squawk': ['Lucy/*.wav, Rachel/*.wav'],
+    },
     python_requires='>=3.0',
+    entry_points={'squawk': ['squawk=squawk:drive']},
     project_urls={
         'Bug Reports': 'https://github.com/kmels/sigpyparser/issues',
         'Funding': 'https://donate.pypi.org',
