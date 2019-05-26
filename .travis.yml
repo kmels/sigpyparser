@@ -1,0 +1,22 @@
+language: python
+sudo: false
+
+python:
+  - 3.3
+  - 3.4
+  - 3.5
+  - 3.6
+  - 3.6.5
+
+env:
+  global:
+    - PACKAGENAME="sigpyparser"
+
+before_install:
+  - pip install -r requirements.txt
+install:
+  - python setup.py install
+script:
+  - pytest .
+notifications:
+email: false

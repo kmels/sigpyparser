@@ -17,7 +17,7 @@ setuptools.setup(
          'Intended Audience :: Developers',
          'License :: OSI Approved :: MIT License',
          'Topic :: Office/Business :: Financial :: Investment',
-         'Programming Language :: Python :: 3',
+         'Programming Language :: Python :: 3.3',
          'Programming Language :: Python :: 3.4',
          'Programming Language :: Python :: 3.5',
          'Programming Language :: Python :: 3.6',
@@ -28,7 +28,7 @@ setuptools.setup(
     package_data={
         'squawk': ['Lucy/*.wav, Rachel/*.wav'],
     },
-    python_requires='>=3.0',
+    python_requires='>=3.3',
     entry_points={'squawk': ['squawk=squawk:drive']},
     project_urls={
         'Bug Reports': 'https://github.com/kmels/sigpyparser/issues',

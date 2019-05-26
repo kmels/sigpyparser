@@ -1,15 +1,14 @@
 import hashlib
-import bson
 import json
 
 from datetime import datetime
 from signal_parser.consensus import *
 
 def myhash(t : str):
-    """Returns a 12-digit integer hash using sha256"""
+    """Returns an integer as hash using sha256"""
     h = hashlib.sha256()
     h.update(t.encode('utf-8'))
-    return bson.Int64(h.hexdigest()[0:12],16)
+    return int(h.hexdigest()[0:12],16)
 
 def mt4_date_converter(o):
     if isinstance(o, datetime):
