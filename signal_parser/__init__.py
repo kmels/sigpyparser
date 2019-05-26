@@ -59,7 +59,6 @@ def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
     pair = getValidPair(text)
     if not pair:
         return Noise("Missing pair")
-
     _tokens = text.split(" ")
     if isBuy and isSell:
         _type = "BUY" if text.index("BUY") < text.index("SELL") else "SELL"
@@ -102,16 +101,17 @@ def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
 
     def mkSafeSetup(s : dict) -> dict:
         if not setup:
-            return False
+            return None
         setup['date'] = d
         setup['sign'] = _type
         setup['username'] = p
         setup['pair'] = 'XAUUSD' if pair == 'GOLD' else pair
         signal = Signal.from_dict(s)
-        if signal.is_payout_safe():
+        sanity_signal = signal.is_payout_safe()
+        if sanity_signal:
             return signal
         else:
-            return None
+            return sanity_signal
 
     if not mkSafeSetup(setup):
         setup = getValidSetup(_type, pair, _tokens, likely_prices, div)
@@ -189,8 +189,13 @@ class Signal (dict):
         if 'BTC' in self['pair']:
             return True
         else:
-            return self.odds() < 25.0 and self.odds() >= 0.1 and self['sl_pips'] <= 500 and self['sl_pips'] >= 10
-
+            if not 'sl_pips' in self:
+                return Noise("Missing SL")
+            if not self.odds() < 25.0 and self.odds() >= 0.1:
+                return Noise("Unsafe payout: %.1f odds" % self.odds())
+            if not (self['sl_pips'] <= 500 and self['sl_pips'] >= 10):
+                return Noise("Unsafe SL: %.1f pips" % self['sl_pips'])
+            return True
     @staticmethod
     def from_dict(unrounded: dict) -> dict:
 
@@ -282,6 +287,10 @@ class Noise():
         return type(obj) is Noise and obj.msg == self.msg
     def __str__(self):
         return self.msg
+    def __nonzero__(self): #Python 2
+        return False
+    def __bool__(self): #Python 3
+        return False
 
 currencies = ['AUD','CAD','CHF','EUR','GBP','JPY','NZD','USD','XAU','WTI','BTC']
 pairs = [a+b for a in currencies[:-3] for b in currencies[:-3] if a is not b]
@@ -293,7 +302,7 @@ def getValidPair(text : str) -> str:
              in currencies and p[-3:] in currencies]
     if len(found_pairs) > 0 and pairs[0] in pairs:
         return found_pairs[0]
-    return None
+    return Noise("Missing pair")
 
 def isPrice(t: str) -> bool:
     try:

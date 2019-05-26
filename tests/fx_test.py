@@ -5,10 +5,7 @@ from datetime import datetime
 today = datetime.now().replace(second=0).replace(microsecond=0)
 
 def _parseSignal(t: str):
-    signal = parseSignal(t,today,'p')
-    if not signal:
-        return None
-    return signal
+    return parseSignal(t,today,'p')
 
 class TestParser(unittest.TestCase):
 
@@ -691,7 +688,7 @@ Buy Usd/Jpy @ 113.18
 Tp - 114.02 & 114.85
 Sl - ???
 
-Support around 113.10""", None)
+Support around 113.10""", Noise("Unsafe SL: 8.0 pips"))
 
     def _untested_79(self):
         self._testParser("""*Tycoon Capital Trading And Investment Club*
@@ -1009,6 +1006,19 @@ All CopyRight © Reserved""", None)
         self._testParser("""SELL USDJPY 109.44
 TP109.28
 SL109.56""", Signal(109.44, 109.56, 109.28, today, "SELL", "p", "USDJPY"))
+
+    ### TEST MISSING STOP LOSSES
+    def test_122(self):
+        if Noise("Missing SL"):
+            assert(False, "Noise cannot be truthful for IF")
+        else:
+            assert(False, "just testing")
+        self._testParser("""Signal no.7✳️✳️
+Buy Gbp/Jpy @ 138.78
+Tp - 139.85 & 140.62
+Sl - ??
+
+Support around 138.55📣📣""", Signal(138.78, 138.55, 139.85, today, "BUY", "p", "GBPJPY"))
 
     def test_211(self):
         self._testParser("""Coin Name-> DNT
