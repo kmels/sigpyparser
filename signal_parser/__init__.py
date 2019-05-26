@@ -410,7 +410,7 @@ def normalizeText(t: str) -> str:
             break
 
     t = re.sub("(\d),(\d)","\g<1>.\g<2>",t) # fix numbers
-
+    t = re.sub("_"," _ ",t)
     t = re.sub("SL"," SL ",t)
     t = re.sub("TP"," TP ",t)
     t = re.sub("\s+\\.","",t)

@@ -350,7 +350,8 @@ Direction @ Bullish
 We move the stop loss to 1248. This way we reduce our risk to 65 pips.""", Noise("Less than 3 prices"))
 
     def test_37(self):
-        self._testParser("""buy limit on gold 1345_1347 sl 1340 tp 1358""", None)
+        self._testParser("""buy limit on gold 1345_1347 sl 1340 tp 1358""",
+        Signal(1345.0, 1340.0, 1358.0, today, "BUY", "p", "XAUUSD") )
 
     def test_38(self):
         self._testParser("""Eurusd Sell Now  1.07940
