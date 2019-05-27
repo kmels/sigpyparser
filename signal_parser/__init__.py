@@ -124,6 +124,17 @@ def valid_setup(t : str, e : float, s : float, tp : float) -> bool:
         return False
     return valid_buy(t,e,s,tp) or valid_sell(t,e,s,tp)
 
+flags = {'AUD':'au','CAD':'ca','CHF':'ch',
+                'EUR':'eu','GBP':'gb','USD':'us',
+                'JPY':'jp', 'NZD':'nz'}
+flags_sym = lambda c: ":flag-%s:" % flags.get(c) if c in flags else ""
+flags_ = {'AUD': '🇦🇺','CAD':'🇨🇦','CHF':'🇨🇭',
+                'EUR':'🇪🇺','GBP':'🇬🇧','USD':'🇺🇸',
+                'JPY':'🇯🇵','NZD':'🇳🇿','XAU':'💎',
+                'WTI': '⛽️', 'BRT': '⛽️'}
+#/💰🛢
+flags_sym_ = lambda c: flags_[c] if c in flags else ""
+
 class Signal (dict):
     def __init__(self, entry : float, sl : float, tp : float, date : datetime, sign : str, username : str, pair : str,
                     inserted_at : datetime = None, outcomes : list = []):
@@ -247,7 +258,7 @@ class Signal (dict):
         _str += self['pair'] + " "
         _str += flags_sym_(self['pair'][-3:]) + "\n"
 
-        if self['sign'] is "BUY":
+        if self['sign'] == "BUY":
             _str +=  "☝ BUY "+"\t";
         else:
             _str += "👇 SELL "+"\t";
