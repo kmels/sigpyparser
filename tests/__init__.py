@@ -1,5 +1,5 @@
 import unittest
-from . import fx_test
+
 from . import *
 
 def fx_tests_suite():

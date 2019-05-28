@@ -1,6 +1,9 @@
 import unittest
-from signal_parser import *
 from datetime import datetime
+
+from signal_parser import *
+from signal_parser.signal import *
+from signal_parser.parser import *
 
 today = datetime.now().replace(second=0).replace(microsecond=0)
 
@@ -11,12 +14,55 @@ class TestParser(unittest.TestCase):
 
     def _testParser(self,text,expected):
         parsedSignal = _parseSignal(text)
-        self.assertEqual(
-            parsedSignal,
-            expected,
-            "\n\tEXPECTED: " + str(expected) + ".\n\tRESULT:   " +
-            str(parsedSignal)
-        )
+
+        if type(expected) in [Signal,Noise,type(None)]:
+            self.assertEqual(
+                parsedSignal,
+                expected,
+                "\n\tEXPECTED: " + str(expected) + ".\n\tRESULT:   " +
+                str(parsedSignal)
+            )
+        else:
+            assert(type(expected) == SignalList)
+
+            self.assertTrue(type(parsedSignal) == SignalList,
+                "\n\tEXPECTED: SignalList, got %s" % str(type(parsedSignal)))
+            self.assertEqual(len(parsedSignal), len(expected),
+                "\n\tEXPECTED: %d, got %d" % (len(expected),len(parsedSignal)))
+
+            self.assertEqual(
+                parsedSignal[0],
+                expected[0],
+                "\n\tEXPECTED: " + str(expected) + ".\n\tRESULT:   " +
+                str(parsedSignal)
+            )
+
+            self.assertEqual(
+                parsedSignal[1]['unique_rep'],
+                expected[1]['unique_rep'],
+                "\n\tEXPECTED: " + str(expected[1]['unique_rep']) + ".\n\tRESULT:   " +
+                str(parsedSignal[1]['unique_rep'])
+            )
+            """expected = sorted(expected, key=lambda s: s['tp'])
+            parsedSignal = sorted(parsedSignal, key=lambda s: s['tp'])
+
+            expected_strs = ','.join([i['unique_rep'] for i in expected])
+            parsedSignal_strs = ','.join([i['unique_rep'] for i in parsedSignal])
+
+            self.assertEqual(parsedSignal_strs, expected_strs,
+                "\n\tEXPECTED: " + expected_strs + ".\n\tRESULT:   " + parsedSignal_strs)
+
+            for i, exp in enumerate(expected):
+                self.assertEqual(parsedSignal[i]['unique_rep'], expected[i]['unique_rep'],
+                "\n\t#"+str(i)+". EXPECTED: " + str(expected[i]['unique_rep']) + ".\n\tRESULT:   " +
+                str(parsedSignal[i]['unique_rep']))
+
+            self.assertEqual(
+                parsedSignal,
+                expected,
+                "\n\tEXPECTED: " + str(expected) + ".\n\tRESULT:   " +
+                str(parsedSignal)
+            )"""
 
     def test_1(self):
         self.assertEqual(
@@ -167,14 +213,22 @@ tp @ 1.64500"""),
             Signal(143.5,142.0,146.5,today,'BUY','p','GBPJPY'))
 
     def test_14(self):
+        sig1 = Signal(1.0740,1.0810,1.0670,today,'SELL','p','EURUSD')
+        sig2 = Signal(1.0740,1.0810,1.0620,today,'SELL','p','EURUSD')
+        sig3 = Signal(1.0740,1.0810,1.0570,today,'SELL','p','EURUSD')
         self._testParser("""🚩SIGNAL FREE 5⃣  SELL EURUSD                                       EN      1.0740
 #TP1    1.0670  +70
 #TP2    1.0620  +120
 #TP3    1.0570  +170
 #SL       1.0810  -70
-#🔘RISK (3%)""", Signal(1.0740,1.0810,1.0670,today,'SELL','p','EURUSD'))
+#🔘RISK (3%)""", SignalList([sig1,sig2,sig3]))
 
     def test_15(self):
+        sig1 = Signal(85.3,88.0,83.50,today,'SELL','p','AUDJPY')
+        sig2 = Signal(85.3,88.0,82.00,today,'SELL','p','AUDJPY')
+        sig3 = Signal(85.3,88.0,80.50,today,'SELL','p','AUDJPY')
+        sig4 = Signal(85.3,88.0,78.50,today,'SELL','p','AUDJPY')
+
         self._testParser("""🚩SIGNAL FREE 6⃣ SELL AUDJPY                                        EN      85.30
 TP1    83.50  +180
 TP2    82.00  +330
@@ -182,7 +236,7 @@ TP3    80.50  +480
 TP4    78.50  +680
 SL       88.00  -270
 🔘RISK (3%)""",
-            Signal(85.3,88.0,83.50,today,'SELL','p','AUDJPY')
+            SignalList([sig1,sig2,sig3,sig4])
         )
 
     def test_16(self):
@@ -190,30 +244,40 @@ SL       88.00  -270
             Signal(0.766, 0.776, 0.75, today, 'SELL', 'p', 'AUDCHF'))
 
     def test_17(self):
+        sig1 = Signal(150.70, 150.11, 151.01, today, 'BUY', 'p', 'GBPJPY')
+        sig2 = Signal(150.70, 150.11, 151.35, today, 'BUY', 'p', 'GBPJPY')
+        sig3 = Signal(150.70, 150.11, 151.75, today, 'BUY', 'p', 'GBPJPY')
+        sig4 = Signal(150.70, 150.11, 154.33, today, 'BUY', 'p', 'GBPJPY')
         self._testParser("""GBPJPY
 BUY LIMIT @ 150.70 - 150.66
 TP 1 151.01
 TP 2 151.35
 TP 3 151.75
 TP 4 154.33
-SL 150.11""", Signal(150.70, 150.11, 151.01, today, 'BUY', 'p', 'GBPJPY'))
+SL 150.11""", SignalList([sig1,sig2,sig3,sig4]))
 
     def test_18(self):
+        sig1 = Signal(0.8011, 0.7976, 0.8057, today, "BUY","p","AUDUSD")
+        sig2 = Signal(0.8011, 0.7976, 0.8073, today, "BUY","p","AUDUSD")
+        sig3 = Signal(0.8011, 0.7976, 0.8124, today, "BUY","p","AUDUSD")
+        sig4 = Signal(0.8011, 0.7976, 0.8172, today, "BUY","p","AUDUSD")
         self._testParser("""AUDUSD
 BUY @ 0.8011 - 0.8020
 TP 1 0.8057
 TP 2 0.8073
 TP 3 0.8124
 TP 4 0.8172
-SL 0.7976""", Signal(0.8011, 0.7976, 0.8057, today, "BUY","p","AUDUSD"))
+SL 0.7976""", SignalList([sig1,sig2,sig3,sig4]))
 
     def test_19(self):
+        sig1 = Signal(0.723, 0.733,0.713, today, "SELL","p","NZDUSD")
+        sig2 = Signal(0.723, 0.733,0.70300, today, "SELL","p","NZDUSD")
         self._testParser("""NZDUSD
 SELL (:point_down:)
 @ 0.72300
 TP1: 0.71300
 TP2: 0.70300
-SL: 0.73300""", Signal(0.723, 0.733,0.713, today, "SELL","p","NZDUSD"))
+SL: 0.73300""", SignalList([sig1,sig2]))
 
     def test_20(self):
         self._testParser("""🌹FOREX MINISTER 🌹
@@ -237,22 +301,27 @@ SL: 0.73300""", Signal(0.723, 0.733,0.713, today, "SELL","p","NZDUSD"))
 🌹FOREX MINISTER 🌹""", None)
 
     def test_21(self):
+        sig1 = Signal(1.0915, 1.0995, 1.0840, today, "SELL", "p", "AUDNZD")
+        sig2 = Signal(1.0915, 1.0995, 1.07150, today, "SELL", "p", "AUDNZD")
         self._testParser("""$$$ NEW TRADE $$$
 Pair @ Australian Dollar / New Zealand Dollar (audnzd)
 Direction @ Bearish
 Entry @ 1.09150 (market price)
 Stop loss @ 1.09950
 1st target @ 1.08400
-2nd target @ 1.07150""", Signal(1.0915, 1.0995, 1.0840, today, "SELL", "p", "AUDNZD"))
+2nd target @ 1.07150""", SignalList([sig1,sig2]))
 
     def test_22(self):
+        sig1 = Signal(0.6978, 0.68985, 0.70535, today, "BUY","p","NZDCHF")
+        sig2 = Signal(0.6978, 0.68985, 0.71780, today, "BUY","p","NZDCHF")
+
         self._testParser("""$$$ NEW TRADE $$$
 Pair @ New Zealand Dollar / Swiss Franc (nzdchf)
 Direction @ Bullish
 Entry @ 0.69780 (market price)
 Stop loss @ 0.68985
 1st target @ 0.70535
-2nd target @ 0.71780""", Signal(0.6978, 0.68985, 0.70535, today, "BUY","p","NZDCHF"))
+2nd target @ 0.71780""", SignalList([sig1,sig2]))
 
     def test_23(self):
         self._testParser("""USDCAD Sell
@@ -285,11 +354,13 @@ Stop: 1337.74
 Target: 1263.19 [Risk to reward ratio 2.23]""", Signal(1314.68,1337.74,1263.19, today, "SELL", "p", "XAUUSD"))
 
     def test_27(self):
+        sig1 = Signal(1.1938, 1.19885, 1.18437, today, "SELL", "p", "EURUSD")
+        sig2 = Signal(1.1938, 1.19885, 1.16922, today, "SELL", "p", "EURUSD")
         self._testParser("""EURUSD filling the gap
 Sell limit: 1.19380
 Stop: 1.19885
 Target 1: 1.18437 [Risk to reward ratio 1.84]
-Target 2: 1.16922 [Risk to reward ratio 4.94]""", Signal(1.1938, 1.19885, 1.18437, today, "SELL", "p", "EURUSD"))
+Target 2: 1.16922 [Risk to reward ratio 4.94]""", SignalList([sig1,sig2]))
 
     def test_28(self):
         self._testParser("""Buy EUR USD 1.1754
@@ -333,12 +404,16 @@ Stop/Loss 1.1200
 Floating (pips) +58""", Signal(1.1420,1.12,1.2,today,"BUY","p","EURCHF"))
 
     def test_34(self):
+        sig1 = Signal(146.5, 145.2, 150, today, "BUY", "p", "GBPJPY")
+        sig2 = Signal(146.5, 145.2, 153, today, "BUY", "p", "GBPJPY")
         self._testParser("""5. Gbpjpy buy limit 146.50 Tp 150.00-153.00 sL (daily close under 145.20)""",
-            Signal(146.5, 145.2, 150, today, "BUY", "p", "GBPJPY"))
+            SignalList([sig1,sig2]))
 
     def test_35(self):
+        sig1 = Signal(1.12, 1.1150, 1.13, today, "BUY", "p", "EURUSD")
+        sig2 = Signal(1.12, 1.1150, 1.1405, today, "BUY", "p", "EURUSD")
         self._testParser("""Buy limit Eurusd 1.1200 -1.1180 Tp 1.1300-1.1405 sL (if 4h candle close under 1.1150 then exit)/""",
-            Signal(1.12, 1.1150, 1.13, today, "BUY", "p", "EURUSD")
+            SignalList([sig1,sig2])
         )
 
     def test_36(self):
@@ -359,12 +434,14 @@ Sl 1.08550
 Tp 0.0700""", None)
 
     def test_39(self):
+        sig1 = Signal(144.11, 144.61, 143.61, today, "SELL", "p", "GBPJPY")
+        sig2 = Signal(144.11, 144.61, 143.11, today, "SELL", "p", "GBPJPY")
         self._testParser("""Signal . no 15
 SELL
 GBPJPY @ 144.11
 SL.        : 144.61
 TP 1.    : 143.61
-TP 2.    : 143.11""", Signal(144.11, 144.61, 143.61, today, "SELL", "p", "GBPJPY"))
+TP 2.    : 143.11""", SignalList([sig1,sig2]))
 
     def test_40(self):
         self._testParser("""Signal . no 15
@@ -380,11 +457,16 @@ TP:1.2566
 SL:1.2434""", Signal(1.2505,1.2434,1.2566,today,"BUY","p","USDCAD"))
 
     def test_42(self):
+        sig1 = Signal(132.65, 133.5, 131.85, today, "SELL", "p", "EURJPY")
+        sig2 = Signal(132.65, 133.5, 131.000, today, "SELL", "p", "EURJPY")
         self._testParser("""EURJPY Sell @132.650,133.000
 TP:131.850,131.000
-SL:133.500""", Signal(132.65, 133.5, 131.85, today, "SELL", "p", "EURJPY"))
+SL:133.500""", SignalList([sig1,sig2]))
 
     def test_43(self):
+        sig1 = Signal(1.68015,1.67432,1.68321, today,"BUY","p","GBPAUD")
+        sig2 = Signal(1.68015,1.67432,1.68632, today,"BUY","p","GBPAUD")
+        sig3 = Signal(1.68015,1.67432,1.68899, today,"BUY","p","GBPAUD")
         self._testParser("""GBPAUD BUY NOW AT 1.68015
 T.P 1
 1.68321
@@ -393,9 +475,12 @@ T.P 2
 T.P 3
 1.68899
 S.L
-1.67432""", Signal(1.68015,1.67432,1.68321, today,"BUY","p","GBPAUD"))
+1.67432""", SignalList([sig1,sig2,sig3]))
 
     def test_44(self):
+        sig1 = Signal(1.1764, 1.1840, 1.1717, today, "SELL", "p", "EURUSD")
+        sig2 = Signal(1.1764, 1.1840, 1.16957, today, "SELL", "p", "EURUSD")
+        sig3 = Signal(1.1764, 1.1840, 1.16779, today, "SELL", "p", "EURUSD")
         self._testParser("""SELL NOW EURUSD AT 1.1764
 T.p 1
 1.17170
@@ -404,7 +489,7 @@ T.p 2
 T.p 3
 1.16779
 S.l
-1.1840""", Signal(1.1764, 1.1840, 1.1717, today, "SELL", "p", "EURUSD"))
+1.1840""", SignalList([sig1,sig2,sig3]))
 
     def test_45(self):
         self._testParser("""Free Signals 4 All:
@@ -414,11 +499,13 @@ Tp2 1.7419
 Sl 1 7786💴💴💴💴💴💵💵💵""", None)
 
     def test_46(self):
+        sig1 = Signal(1.7610, 1.7786, 1.7517, today, "SELL", "p", "GBPNZD")
+        sig2 = Signal(1.7610, 1.7786, 1.7419, today, "SELL", "p", "GBPNZD")
         self._testParser("""Free Signals 4 All:
 Sell Gbpnzd at cmp 1.7610
 Tp1 1.7517
 Tp2 1.7419
-Sl 1.7786💴💴💴💴💴💵💵💵""", Signal(1.7610, 1.7786, 1.7517, today, "SELL", "p", "GBPNZD"))
+Sl 1.7786💴💴💴💴💴💵💵💵""", SignalList([sig1,sig2]))
 
     def test_47(self):
         self._testParser("""paid signals:
@@ -427,19 +514,27 @@ SL 0.8950
 TP 0.8700""", Signal(0.8870, 0.8950, 0.87, today,"SELL","p","EURGBP"))
 
     def test_48(self):
+        sig1 = Signal(1.1745, 1.17, 1.177, today, "BUY", "p", "EURUSD")
+        sig2 = Signal(1.1745, 1.17, 1.17950, today, "BUY", "p", "EURUSD")
         self._testParser("""Signal (1)
 Buy EUR/USD 1.17450
 Tp1 1.17700
 Tp2 1.17950
-Sl 1.17000""", Signal(1.1745, 1.17, 1.177, today, "BUY", "p", "EURUSD"))
+Sl 1.17000""", SignalList([sig1,sig2]))
 
     def test_49(self):
+        sig1 = Signal(1.8941,1.8975,1.886,today,"SELL","p","GBPNZD")
+        sig2 = Signal(1.8941,1.8975,1.8820,today,"SELL","p","GBPNZD")
+        sig3 = Signal(1.8941,1.8975,1.8780,today,"SELL","p","GBPNZD")
         self._testParser("""# GBP NZD - Sell Again @ 1.8941 - SL : 1.8975 - TP : 1.8860 - 1.8820 - 1.8780""",
-        Signal(1.8941,1.8975,1.886,today,"SELL","p","GBPNZD"))
+        SignalList([sig1,sig2,sig3])
+        )
 
     def test_50(self):
+        sig1 = Signal(1.4934,1.4995,1.4910,today,"SELL","p","EURAUD")
+        sig2 = Signal(1.4934,1.4995,1.4875,today,"SELL","p","EURAUD")
         self._testParser("""# EUR AUD - Sell @ 1.4934 - SL : 1.4995 - TP : Trailing STOP or 1.4910 - 1.4875""",
-        Signal(1.4934,1.4995,1.4910,today,"SELL","p","EURAUD"))
+        SignalList([sig1,sig2]))
 
     def test_51(self):
         self._testParser("""Gbpjpy sell now @ 149.25
@@ -447,10 +542,12 @@ S.l 149.75
 T.p 147 """, Signal(149.25,149.75,147,today,"SELL","p","GBPJPY"))
 
     def test_52(self):
+        sig1 = Signal(1312, 1317, 1308, today, "SELL", "p", "XAUUSD")
+        sig2 = Signal(1312, 1317, 1305, today, "SELL", "p", "XAUUSD")
         self._testParser("""Gold sell now @ 1312
 S.l 1317
 T.p 1308
-T.p2 1305""", Signal(1312, 1317, 1308, today, "SELL", "p", "XAUUSD"))
+T.p2 1305""", SignalList([sig1,sig2]))
 
     def test_53(self):
         self._testParser("""Gold buy now @ 1300
@@ -589,8 +686,10 @@ TP 132.00
 SL 134.00""", Signal(133.4,134,132,today,"SELL","p","EURJPY"))
 
     def test_69(self):
+        sig1 = Signal(1.3193,1.3233,1.3145, today, "SELL", "p","GBPUSD")
+        sig2 = Signal(1.3193,1.3233,1.3080, today, "SELL", "p","GBPUSD")
         self._testParser("""GBPUSD Bearish BAT pattern Start to enter short position from 1.3193 to 1.3210 Sl above 1.3233 TP1: 1.3145 TP2: 1.3080
-""", Signal(1.3193,1.3233,1.3145, today, "SELL", "p","GBPUSD"))
+""", SignalList([sig1,sig2]))
 
     def test_70(self):
         self._testParser("""Sell limit Euraud
@@ -673,6 +772,8 @@ Sl: 1.313
 Tp: 1.345""", Signal(1.3241,1.313,1.345,today,"BUY","p","USDCAD"))
 
     def test_77(self):
+        sig1 = Signal(1.69071, 1.7, 1.6845,today,"SELL","p","EURNZD")
+        sig2 = Signal(1.69071, 1.7, 1.68000,today,"SELL","p","EURNZD")
         self._testParser("""Free signal 21.12.2017:
 
 EURNZD SELL
@@ -681,7 +782,7 @@ Max 5% risk
 ENTRY 1.69071
 SL 1.7000
 TP1 1.68450
-TP2 1.68000""", Signal(1.69071, 1.7, 1.6845,today,"SELL","p","EURNZD"))
+TP2 1.68000""", SignalList([sig1, sig2]))
 
     def test_78(self):
         self._testParser("""Signal no.1✳️✳️
@@ -689,7 +790,7 @@ Buy Usd/Jpy @ 113.18
 Tp - 114.02 & 114.85
 Sl - ???
 
-Support around 113.10""", Noise("Unsafe SL: 8.0 pips"))
+Support around 113.10""", None)
 
     def _untested_79(self):
         self._testParser("""*Tycoon Capital Trading And Investment Club*
@@ -715,12 +816,15 @@ Sl 113.200 80 pips
 Tp 111.600 100 pips""", Signal(112.6,113.2,111.6,today,"SELL","p","USDJPY"))
 
     def test_82(self):
+        sig1 = Signal(0.7198, 0.7231, 0.7150,today,"SELL","p","NZDUSD")
+        sig2 = Signal(0.7198, 0.7231, 0.7086,today,"SELL","p","NZDUSD")
+        sig3 = Signal(0.7198, 0.7231, 0.70345,today,"SELL","p","NZDUSD")
         self._testParser("""NZD/USD Sell H1
 At :  0.7198
 SL : 0.7231 - Risk 30 Pip
 TP1 :0.7150 - Reward  60 pip
 TP2 : 0.7086 - Reward  115 pip
-TP3 : 0.70345 - Reward  165 pip""", Signal(0.7198, 0.7231, 0.7150,today,"SELL","p","NZDUSD"))
+TP3 : 0.70345 - Reward  165 pip""", SignalList([sig1,sig2,sig3]))
 
     def test_83(self):
         self._testParser("""EURJPY BUY LIMIT SET AT @
@@ -778,6 +882,9 @@ Tp 87.00""", Signal(85.37,84.37,87, today, "BUY", "p", "CADJPY"))
 Sl @ 84.100""", Noise("Missing pair")) # no pair
 
     def test_92(self):
+        sig1 = Signal(0.79356,0.7992,0.7882, today, "SELL", "p", "AUDUSD")
+        sig2 = Signal(0.79356,0.7992,0.78335, today, "SELL", "p", "AUDUSD")
+        sig3 = Signal(0.79356,0.7992,0.77935, today, "SELL", "p", "AUDUSD")
         self._testParser("""AUDUSD SELL NOW 0.79356
 T.p.1
 0.78820
@@ -786,9 +893,12 @@ T.P 2
 T.P 3
 0.77935
 S.L
-0.79920""", Signal(0.79356,0.7992,0.7882, today, "SELL", "p", "AUDUSD"))
+0.79920""", SignalList([sig1,sig2,sig3]))
 
     def test_93(self):
+        #sig1 = Signal(1.2191,1.2272,1.21520, today, "SELL", "p", "EURUSD")
+        sig2 = Signal(1.2191,1.2272,1.21012, today, "SELL", "p", "EURUSD")
+        sig3 = Signal(1.2191,1.2272,1.19520, today, "SELL", "p", "EURUSD")
         self._testParser("""EURUSD SELL NOW 1.21910
 T.p 1
 1 21520
@@ -797,7 +907,7 @@ T.p 2
 T.p 3
 1.19520
 S.l
-1.22720""", Signal(1.2191,1.2272,1.21012, today, "SELL", "p", "EURUSD"))
+1.22720""", SignalList([sig2,sig3]))
 
     def test_94(self):
         self._testParser("""33]
@@ -811,10 +921,12 @@ SL  x : 1.6710
 :spiral_calendar_pad:2018.1.14""", Signal(1.6780,1.6710,1.6850, today, "BUY", "p", "EURNZD")) #mal primer tp
 
     def test_95(self):
+        sig1 = Signal(1.3283,1.3350,1.3253, today, "SELL", "p", "GBPCHF")
+        sig2 = Signal(1.3283,1.3350,1.3223, today, "SELL", "p", "GBPCHF")
         self._testParser("""For gbpchf
 Please sell at 1.3283
 SL 1.3350 Tp1 1.3253
-Tp2 1.3223""", Signal(1.3283,1.3350,1.3253, today, "SELL", "p", "GBPCHF"))
+Tp2 1.3223""", SignalList([sig1,sig2]))
 
     def test_96(self):
         self._testParser("""GBPAUD buy stop 1.7754
@@ -842,17 +954,22 @@ SL : 130.700 (-40 pips)
 TP : 122.500 (+780 pips)""", Signal(130.300,130.700,122.500, today, "SELL", "p", "EURJPY"))
 
     def test_100(self):
+        sig1 = Signal(1195.00,1185.00,1200.00, today, "BUY", "p", "XAUUSD")
+        sig2 = Signal(1195.00,1185.00,1220.00, today, "BUY", "p", "XAUUSD")
+        sig3 = Signal(1195.00,1185.00,1250.00, today, "BUY", "p", "XAUUSD")
         self._testParser("""BUY XAU/USD  Now 1195.00
 :small_red_triangle_down: SL :- 1185.00
 :small_orange_diamond:TP1:- 1200.00
 :small_orange_diamond:TP2:- 1220.00
-:small_orange_diamond:Tp3:-  1250.00""", Signal(1195.00,1185.00,1200.00, today, "BUY", "p", "XAUUSD"))
+:small_orange_diamond:Tp3:-  1250.00""", SignalList([sig1,sig2,sig3]))
 
     def test_101(self):
+        sig1 = Signal(110.28, 109.83, 110.52, today, "BUY", "p", "USDJPY")
+        sig2 = Signal(110.28, 109.83, 110.70, today, "BUY", "p", "USDJPY")
         self._testParser("""**buy usdjpy now at 110.28_110.20
 stop 109.83
 Target1#110.52
-target2# 110.70""", Signal(110.28, 109.83, 110.52, today, "BUY", "p", "USDJPY"))
+target2# 110.70""", SignalList([sig1,sig2]))
 
     def test_102(self):
         self._testParser("""Buy NZD USD 0.6470
@@ -891,25 +1008,34 @@ SL 1250
 TARGET 1230:boom:®:pound:""", Signal(1240, 1250, 1230, today, "SELL", "p", "XAUUSD"))
 
     def test_106(self):
+        sig1 = Signal(1.666, 1.658, 1.67, today, "BUY", "p", "GBPCAD")
+        sig2 = Signal(1.666, 1.658, 1.6750, today, "BUY", "p", "GBPCAD")
+        sig3 = Signal(1.666, 1.658, 1.6800, today, "BUY", "p", "GBPCAD")
+        sig4 = Signal(1.666, 1.658, 1.6850, today, "BUY", "p", "GBPCAD")
+        sig5 = Signal(1.666, 1.658, 1.6900, today, "BUY", "p", "GBPCAD")
         self._testParser("""Buy Gbp cad 1.6660
 Sl 1.6580
 Tp1 1.6700
 Tp2 1.6750
 Tp3 1.6800
 Tp4 1.6850
-Tp5 1.6900""", Signal(1.666, 1.658, 1.67, today, "BUY", "p", "GBPCAD"))
+Tp5 1.6900""", SignalList([sig1,sig2,sig3,sig4,sig5]))
 
     def test_107(self):
+        sig1 = Signal(1247.92, 1260.92, 1240.92, today, "SELL", "p","XAUUSD")
+        sig2 = Signal(1247.92, 1260.92, 1235.92, today, "SELL", "p","XAUUSD")
         self._testParser("""🔴XAU/USD SELL ENTRY AT
 1247.92
 Tp1 1240.92
 Tp2 1235.92
-Sl 1260.92""", Signal(1247.92, 1260.92, 1240.92, today, "SELL", "p","XAUUSD"))
+Sl 1260.92""", SignalList([sig1,sig2]))
 
     def test_108(self):
+        sig1 = Signal(1224, 1215, 1243, today, "BUY", "p", "XAUUSD")
+        sig2 = Signal(1224, 1215, 1258, today, "BUY", "p", "XAUUSD")
         self._testParser(""":small_blue_diamond:Gold buy now at 1224
    :small_red_triangle_down:Stop loss at 1215
-:heavy_check_mark:Take Profit at 1243 & 1258""", Signal(1224, 1215, 1243, today, "BUY", "p", "XAUUSD"))
+:heavy_check_mark:Take Profit at 1243 & 1258""", SignalList([sig1,sig2]))
 
     def test_109(self):
         self._testParser("""#GBPUSD  Buy
@@ -926,8 +1052,11 @@ Date : 2018/12/24""", Signal(1.2724, 1.2630, 1.2921, today, "BUY", "p", "GBPUSD"
 All Copyrights© Reserved""", Signal(1280, 1290, 1270, today, "SELL", "p", "XAUUSD"))
 
     def test_111(self):
+        sig1 = Signal(1.8036, 1.8096, 1.8001, today, "SELL", "p", "GBPAUD")
+        sig2 = Signal(1.8036, 1.8096, 1.7970, today, "SELL", "p", "GBPAUD")
+        sig3 = Signal(1.8036, 1.8096, 1.7930, today, "SELL", "p", "GBPAUD")
         self._testParser("""# GBP AUD - Sell @ 1.8036 - SL : 1.8096 - TP : 1.8001 - 1.7970 - 1.7930""",
-        Signal(1.8036, 1.8096, 1.8001, today, "SELL", "p", "GBPAUD"))
+        SignalList([sig1,sig2,sig3]))
 
 
     def test_112(self):
@@ -936,22 +1065,28 @@ Take Profit: 20-50-100 Pips
 Stop Loss:- 45Pips""", None);
 
     def test_113(self):
+        sig1 = Signal(1.7025, 1.7085, 1.6990, today, "SELL", "p", "GBPCAD")
+        sig2 = Signal(1.7025, 1.7085, 1.6955, today, "SELL", "p", "GBPCAD")
+        sig3 = Signal(1.7025, 1.7085, 1.6885, today, "SELL", "p", "GBPCAD")
         self._testParser("""GBPCAD SELL: 1.7025
 Tp1: 1.6990 (35pips)
 Tp2: 1.6955 (70pips)
 Tp3: 1.6885 (140pips)
 SI: 1.7085 (60pips)
 
-Hit tp1 +35pips 🕺💃""", Signal(1.7025, 1.7085, 1.6990, today, "SELL", "p", "GBPCAD"))
+Hit tp1 +35pips 🕺💃""", SignalList([sig1,sig2,sig3]))
 
     def test_114(self):
+        sig1 = Signal(77.19, 76.69, 77.44, today, "BUY", "p", "AUDJPY")
+        sig2 = Signal(77.19, 76.69, 77.74, today, "BUY", "p", "AUDJPY")
+        sig3 = Signal(77.19, 76.69, 78.29, today, "BUY", "p", "AUDJPY")
         self._testParser("""AUDJPY Buy: 77.19
 Tp1: 77.44 (25pips)
 Tp2: 77.74 (55pips)
 Tp3: 78.29 (110pips)
 St 76.69 (50pips)
 
-Hit tp1 +25pips :man_dancing::dancer:""", Signal(77.19, 76.69, 77.44, today, "BUY", "p", "AUDJPY"))
+Hit tp1 +25pips :man_dancing::dancer:""", SignalList([sig1,sig2,sig3]))
 
     def test_115(self):
         self._testParser("""#USDCHF Buy @ :point_down::point_down:
@@ -1010,16 +1145,14 @@ SL109.56""", Signal(109.44, 109.56, 109.28, today, "SELL", "p", "USDJPY"))
 
     ### TEST MISSING STOP LOSSES
     def test_122(self):
-        if Noise("Missing SL"):
-            assert(False, "Noise cannot be truthful for IF")
-        else:
-            assert(False, "just testing")
+        sig1 = Signal(138.78, 138.55, 139.85, today, "BUY", "p", "GBPJPY")
+        sig2 = Signal(138.78, 138.55, 140.62, today, "BUY", "p", "GBPJPY")
         self._testParser("""Signal no.7✳️✳️
 Buy Gbp/Jpy @ 138.78
 Tp - 139.85 & 140.62
 Sl - ??
 
-Support around 138.55📣📣""", Signal(138.78, 138.55, 139.85, today, "BUY", "p", "GBPJPY"))
+Support around 138.55📣📣""", SignalList([sig1,sig2]))
 
     def test_211(self):
         self._testParser("""Coin Name-> DNT
@@ -1044,6 +1177,23 @@ Tp 140.000
 Gold sell now 1308
 Sl 1318
 Tp 1290""", Signal(142.0, 143.0, 140.0, today, "SELL", "p", "GBPJPY"))
+
+    def test_multiple(self):
+        #(1288, 1265, [1291.0, 1300.0, 1311.0, 1324.0], today, "BUY", "p", "XAUUSD")
+
+        signal1 = Signal(1288.0, 1265.0, 1291.0, today, "BUY", "p", "XAUUSD")
+        signal2 = Signal(1288.0, 1265.0, 1300.0, today, "BUY", "p", "XAUUSD")
+        signal3 = Signal(1288.0, 1265.0, 1311.0, today, "BUY", "p", "XAUUSD")
+        signal4 = Signal(1288.0, 1265.0, 1324.0, today, "BUY", "p", "XAUUSD")
+
+        self._testParser("""GOLD (SWING TRADE)
+BUY @ 1288 / IDEAL 1280
+TP 1 1291
+TP 2 1300
+TP 3 1311
+TP 4 1324
+SL 1265
+""", SignalList([signal1, signal2, signal3, signal4]))
 
 #    def test_213(self):
 #        self._testParser("""1). Short GBPJPY
