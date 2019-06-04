@@ -174,7 +174,7 @@ class Signal (dict):
         return self.consensus.get_consensus()
 
 class SignalList(list):
-    def __init__(self, signals):
+    def __init__(self, signals):        
         are_signals = [type(x) is Signal for x in signals]
         assert(all(are_signals))
         self.extend(signals)

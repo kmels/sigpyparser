@@ -14,7 +14,17 @@ currencies = ['AUD','CAD','CHF','EUR','GBP','JPY','NZD','USD','XAU','WTI','BTC']
 pairs = [a+b for a in currencies[:-3] for b in currencies[:-3] if a is not b]
 pairs.extend(['BTCUSD','WTIUSD','XAUUSD'])
 
+binance_cryptos = ['BNB','BTC','NEO','ETH','LTC','QTUM','EOS','SNT','BNT','GAS','BCH','BTM','USDT','HCC','HSR','OAX','DNT','MCO','ICN','ZRX','OMG','WTC','LRC','LLT','YOYO','TRX','STRAT','SNGLS','BQX','KNC','SNM','FUN','LINK','XVG','CTR','SALT','MDA','IOTA','SUB','IOT','ETC','MTL','MTH','ENG','AST','DASH','BTG','EVX','REQ','VIB','POWR','ARK','XRP','MOD','ENJ','STORJ','VEN','KMD','RCN','NULS','RDN','XMR','DLT','AMB','BAT','ZEC','BCPT','ARN','GVT','CDT','GXS','POE','QSP','BTS','XZC','LSK','TNT','FUEL','MANA','BCD','DGD','ADX','ADA','PPT','CMT','XLM','CND','LEND','WABI','SBTC','BCX','WAVES','TNB','GTO','ICX','OST','ELF','AION','ETF','BRD','NEBL','VIBE','LUN','CHAT','RLC','INS','IOST','STEEM','NANO','AE','VIA','BLZ','SYS','RPX','NCASH','POA','ONT','ZIL','STORM','XEM','WAN','WPR','QLC','GRS','EDO','WINGS','NAV','TRIG','APPC','PIVX']
+
+cryptocurrencies = []
+cryptocurrencies.extend(binance_cryptos)
+crypto_pairs = [base+"/"+counter for base in cryptocurrencies for counter in cryptocurrencies if base is not counter]
+
+
 def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
+    """
+    Given a text with some signal, returns either Signal, SignalList or Noise. 
+    """
     if t is None:
         return Noise("Empty text")
 
@@ -157,13 +167,42 @@ def valid_setup(t : str, e : float, s : float, tp : float) -> bool:
         return False
     return valid_buy(t,e,s,tp) or valid_sell(t,e,s,tp)
 
-def getValidPair(text : str) -> str:
+def getValidCryptoPair(text : str) -> str:
+    # Look for hashtags and $ first
+
+    tokens = text.split(" ")
+    found_pairs = [t for t in tokens if t in crypto_pairs]
+
+    if len(found_pairs) == 0:
+        # Default to counter in satoshis
+        found_cryptos = [c for c in tokens if c in cryptocurrencies]
+        btc_pairs = [c+"/BTC" for c in found_cryptos if (c+"/BTC") in crypto_pairs]
+        found_pairs.extend(btc_pairs)
+
+    if len(found_pairs) > 0 and pairs[0] in pairs:
+        return found_pairs[0]
+    
+    return Noise("Missing pair")
+
+def getValidFXPair(text : str) -> str:
     sixletters = [t for t in text.split(" ") if len(t) is 6]
     found_pairs = [p for p in sixletters if p[:3]
              in currencies and p[-3:] in currencies]
     if len(found_pairs) > 0 and pairs[0] in pairs:
         return found_pairs[0]
     return Noise("Missing pair")
+
+def getValidPair(text: str) -> str:
+    
+    fx = getValidFXPair(text)
+    if fx and type(fx) is str:
+        return fx
+    
+    crypto = getValidCryptoPair(text)
+    if crypto:
+        return crypto
+    
+    return Noise("Missing pair") 
 
 def isPrice(t: str) -> bool:
     try:
@@ -269,6 +308,7 @@ def normalizeText(t: str) -> str:
     t = re.sub("(SELL|BUY) TERM","",t)
     t = t.replace('💯'," ")
     t = t.replace('#'," ")
+    #t = t.replace('$'," ")
     t = t.replace('S-L'," SL ")
     t = t.replace('T-P'," TP ")
     t = t.replace('-'," ")
@@ -289,6 +329,7 @@ def normalizeText(t: str) -> str:
             break
     t = re.sub("(\\d),(\\d)","\\g<1>.\\g<2>",t) # fix numbers
     t = re.sub("_"," _ ",t)
+    t = re.sub("TG","TP",t)
     t = re.sub("SL"," SL ",t)
     t = re.sub("TP"," TP ",t)
     t = re.sub("\\s+\\.","",t)

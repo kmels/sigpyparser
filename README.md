@@ -17,14 +17,31 @@ For each signal, the following is calculated:
   * Unique Rep
   * MT4 Rep
 
+Install
+----
+
+´´´
+python3 setup.py install --user
+´´´
+
+Usage
+----
+
+´´´
+python3
+
+> from signal_parser import *
+> parser.parseSignal("")
+
+´´´
+
 Features
 ----
  * Support for major FX pairs.
- * Supports one TP price
+ * Supports one and multiple TP price(s)
  * More than 100+ unit tests
+
 
 Roadmap
 ----
-* Support cryptocurrency signals
-* Support multiple TP
-* Support multiple signals per text
+* Support multiple signals with multiple targets per text

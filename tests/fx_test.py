@@ -10,7 +10,7 @@ today = datetime.now().replace(second=0).replace(microsecond=0)
 def _parseSignal(t: str):
     return parseSignal(t,today,'p')
 
-class TestParser(unittest.TestCase):
+class TestFXParser(unittest.TestCase):
 
     def _testParser(self,text,expected):
         parsedSignal = _parseSignal(text)
@@ -43,14 +43,15 @@ class TestParser(unittest.TestCase):
                 "\n\tEXPECTED: " + str(expected[1]['unique_rep']) + ".\n\tRESULT:   " +
                 str(parsedSignal[1]['unique_rep'])
             )
-            """expected = sorted(expected, key=lambda s: s['tp'])
-            parsedSignal = sorted(parsedSignal, key=lambda s: s['tp'])
+            
+            expectedTakeProfits = sorted(expected, key=lambda s: s['tp'])
+            parsedSignalTakeProfits = sorted(parsedSignal, key=lambda s: s['tp'])
 
-            expected_strs = ','.join([i['unique_rep'] for i in expected])
-            parsedSignal_strs = ','.join([i['unique_rep'] for i in parsedSignal])
+            expectedTPs = ','.join([i['unique_rep'] for i in expectedTakeProfits])
+            parsedTPs = ','.join([i['unique_rep'] for i in parsedSignalTakeProfits])
 
-            self.assertEqual(parsedSignal_strs, expected_strs,
-                "\n\tEXPECTED: " + expected_strs + ".\n\tRESULT:   " + parsedSignal_strs)
+            self.assertEqual(expectedTakeProfits, parsedSignalTakeProfits)
+            self.assertEqual(expectedTPs, parsedTPs)
 
             for i, exp in enumerate(expected):
                 self.assertEqual(parsedSignal[i]['unique_rep'], expected[i]['unique_rep'],
@@ -62,11 +63,11 @@ class TestParser(unittest.TestCase):
                 expected,
                 "\n\tEXPECTED: " + str(expected) + ".\n\tRESULT:   " +
                 str(parsedSignal)
-            )"""
+            )
 
     def test_1(self):
-        self.assertEqual(
-            parseSignal("GOLD BUY FROM CMP 1331 SL = 1327 TP = 1370", today, 'p'),
+        self.assertEquals(
+            _parseSignal("GOLD BUY FROM CMP 1331 SL = 1327 TP = 1370"),
             Signal(1331.0,1327.0,1370.0,today,'BUY','p','XAUUSD')
         )
 
@@ -1153,21 +1154,6 @@ Tp - 139.85 & 140.62
 Sl - ??
 
 Support around 138.55📣📣""", SignalList([sig1,sig2]))
-
-    def test_211(self):
-        self._testParser("""Coin Name-> DNT
-
-#binance
-
-Buy Around-300
-
-Sell Targets
-
-Target 1- 330
-Target 2- 345
-Target 3- 420
-
- Stop Loss - 275""", Noise("Missing pair")) # Signal(300, 275, 330, "BUY", "p", "DNT"))
 
     def test_212(self):
         self._testParser("""Gbpjpy sell now 142.000
