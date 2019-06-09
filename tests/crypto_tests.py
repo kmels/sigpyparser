@@ -111,6 +111,10 @@ T4 : 58
 T5 : 65""", Noise("Missing SL"))
 
     def test_crypto4(self):        
+        s1 = Signal(310,290,350,today,'BUY','p','PHB/BTC')
+        s2 = Signal(310,290,400,today,'BUY','p','PHB/BTC')
+        s3 = Signal(310,290,500,today,'BUY','p','PHB/BTC')
+
         self._testParser("""To Moon CRYPTO SIGNALS 🏴‍☠️, [31.05.19 08:07]
 [Forwarded from Luxury crypto signal / VIP SIGNAL]
 Coin - #PHB/Btc
@@ -123,7 +127,7 @@ Target 1 - 350
 Target 2- 400
 Target 3- 500
 
-STOP - 0290""", None)
+STOP - 0290""", SignalList([s1,s2,s3]))
 
     def test_crypto5(self):
         sig1 = Signal(190,160,250,today,'BUY','p','ZIL/BTC')

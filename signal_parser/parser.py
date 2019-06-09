@@ -332,6 +332,7 @@ def normalizeText(t: str) -> str:
     t = re.sub("TG","TP",t)
     t = re.sub("SL"," SL ",t)
     t = re.sub("TP"," TP ",t)
+    t = re.sub(" \\.(\\d+)"," \\g<1> ", t)
     t = re.sub("\\s+\\.","",t)
     t = re.sub("(\\.\\.)+"," ",t)
     t = re.sub("T\\.P"," TP ",t)
