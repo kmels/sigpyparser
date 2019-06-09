@@ -35,14 +35,14 @@ class Signal (dict):
             inserted_at = date.strftime("%Y.%m.%d %H:%M:%S")
         self['inserted_at'] = inserted_at
 
-        precision = 5
+        precise = "%.5f"
         if "BTC" in pair:
-            precision = 9
+            precise = "%.9f"
 
-        self['mt4_rep'] = f"%s %s %s %.{precision}f SL %.{precision}f TP %.{precision}f" % (
+        self['mt4_rep'] = ("%s %s %s "+precise+" SL "+precise+" TP "+precise) % (
             mt4_date, pair, sign, float(entry), float(sl), float(tp)
         )
-        self['unique_rep'] = f"%s %s %.{precision}f SL %.{precision}f TP %.{precision}f" % (
+        self['unique_rep'] = ("%s %s "+precise+" SL "+precise+" TP "+precise) % (
             pair, sign, float(entry), float(sl), float(tp)
         )
         self['hash'] = myhash(self['mt4_rep'])
