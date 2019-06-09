@@ -155,31 +155,24 @@ STOP LOSS : 160""", SignalList([sig1,sig2,sig3]))
     def test_crypto6(self):        
         self._testParser("""Buy FET at 2350-2380  sat
 target = 3400 sat
-stop bellow 2190
+stop bellow 2190""", Signal(2350, 2190, 3400, today, 'BUY', 'p', 'FET/BTC'))
 
+    def test_crypto_pips_diff(self):
+        diff = pips_diff(2180, 0.00002150,'ENJ/BTC')
+        self.assertEqual(diff, 2180-0.00002150)
 
-COIN: #PIVX/BTC (BINANCE)
+    def test_crypto7(self):
+        sig1 = Signal(0.00002150,0.00001990,0.00002290,today,'BUY','p','ENJ/BTC')
+        sig2 = Signal(0.00002150,0.00001990,2470,today,'BUY','p','ENJ/BTC')
+        sig3 = Signal(0.00002150,0.00001990,2650,today,'BUY','p','ENJ/BTC')
 
-📌BUY PRICE:   0.0000860 - 890
-
-🔥 TARGET :  0.0000950 - 1030 - 1200
-
-❌ Stop-loss: 0.0000770""", None)
-
-    def test_crypto7(self):        
-        self._testParser("""https://www.tradingview.com/x/9dRqwTjX/
-
-###
-
-COIN: #ENJ/BTC (BINANCE)
+        self._testParser("""COIN: #ENJ/BTC (BINANCE)
 
 📌BUY PRICE:   0.00002150 - 2180
 
 🔥 TARGET :  0.00002290 - 2470 - 2650
 
-❌ Stop-loss: 0.00001990
-
-https://www.tradingview.com/x/ZFmVEuQX/""", None)
+❌ Stop-loss: 0.00001990""", SignalList([sig1,sig2,sig3]))
 
 
     def test_crypto8(self):        
@@ -193,3 +186,15 @@ T 2: 1380
  T 3: 1670
 T 4: 1920""", Noise("Missing SL"))
 
+    def test_crypto9(self):
+        sig1 = Signal(0.0000860,0.0000770,0.0000950,today,'BUY','p','PIVX/BTC')
+        sig2 = Signal(0.0000860,0.0000770,1030,today,'BUY','p','PIVX/BTC')
+        sig3 = Signal(0.0000860,0.0000770,1200,today,'BUY','p','PIVX/BTC')
+
+        self._testParser("""COIN: #PIVX/BTC (BINANCE)
+
+📌BUY PRICE:   0.0000860 - 890
+
+🔥 TARGET :  0.0000950 - 1030 - 1200
+
+❌ Stop-loss: 0.0000770""", SignalList([sig1,sig2,sig3]))

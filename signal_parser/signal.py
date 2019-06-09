@@ -35,10 +35,14 @@ class Signal (dict):
             inserted_at = date.strftime("%Y.%m.%d %H:%M:%S")
         self['inserted_at'] = inserted_at
 
-        self['mt4_rep'] = "%s %s %s %.5f SL %.5f TP %.5f" % (
+        precision = 5
+        if "BTC" in pair:
+            precision = 9
+
+        self['mt4_rep'] = f"%s %s %s %.{precision}f SL %.{precision}f TP %.{precision}f" % (
             mt4_date, pair, sign, float(entry), float(sl), float(tp)
         )
-        self['unique_rep'] = "%s %s %.5f SL %.5f TP %.5f" % (
+        self['unique_rep'] = f"%s %s %.{precision}f SL %.{precision}f TP %.{precision}f" % (
             pair, sign, float(entry), float(sl), float(tp)
         )
         self['hash'] = myhash(self['mt4_rep'])
@@ -96,7 +100,10 @@ class Signal (dict):
             if '_id' in unrounded:
                 del unrounded['_id']
             dumped = json.dumps(unrounded, default = mt4_date_converter)
-            rounded = lambda x: float("%.5f" % float(x))
+            if "BTC" in unrounded['pair']:
+                rounded = lambda x: float("%.9f" % float(x))
+            else:
+                rounded = lambda x: float("%.5f" % float(x))
             it = json.loads(dumped,
                 object_hook=mt4_date_parser, parse_float=rounded)
             s = Signal(it['entry'],it['sl'],it['tp'],it['date'],it['sign'],it['username'],
@@ -176,7 +183,10 @@ class Signal (dict):
 class SignalList(list):
     def __init__(self, signals):        
         are_signals = [type(x) is Signal for x in signals]
-        assert(all(are_signals))
+        if not all(are_signals):
+            print("Types are signals: ", [type(x) for x in signals])
+            print(signals)
+            assert(all(are_signals))
         self.extend(signals)
 
         unique_hashes = list(set([s['hash'] for s in signals]))

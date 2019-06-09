@@ -14,7 +14,7 @@ currencies = ['AUD','CAD','CHF','EUR','GBP','JPY','NZD','USD','XAU','WTI','BTC']
 pairs = [a+b for a in currencies[:-3] for b in currencies[:-3] if a is not b]
 pairs.extend(['BTCUSD','WTIUSD','XAUUSD'])
 
-binance_cryptos = ['BNB','BTC','NEO','ETH','LTC','QTUM','EOS','SNT','BNT','GAS','BCH','BTM','USDT','HCC','HSR','OAX','DNT','MCO','ICN','ZRX','OMG','WTC','LRC','LLT','YOYO','TRX','STRAT','SNGLS','BQX','KNC','SNM','FUN','LINK','XVG','CTR','SALT','MDA','IOTA','SUB','IOT','ETC','MTL','MTH','ENG','AST','DASH','BTG','EVX','REQ','VIB','POWR','ARK','XRP','MOD','ENJ','STORJ','VEN','KMD','RCN','NULS','RDN','XMR','DLT','AMB','BAT','ZEC','BCPT','ARN','GVT','CDT','GXS','POE','QSP','BTS','XZC','LSK','TNT','FUEL','MANA','BCD','DGD','ADX','ADA','PPT','CMT','XLM','CND','LEND','WABI','SBTC','BCX','WAVES','TNB','GTO','ICX','OST','ELF','AION','ETF','BRD','NEBL','VIBE','LUN','CHAT','RLC','INS','IOST','STEEM','NANO','AE','VIA','BLZ','SYS','RPX','NCASH','POA','ONT','ZIL','STORM','XEM','WAN','WPR','QLC','GRS','EDO','WINGS','NAV','TRIG','APPC','PIVX','MFT','PHB']
+binance_cryptos = ['BNB','BTC','NEO','ETH','LTC','QTUM','EOS','SNT','BNT','GAS','BCH','BTM','USDT','HCC','HSR','OAX','DNT','MCO','ICN','ZRX','OMG','WTC','LRC','LLT','YOYO','TRX','STRAT','SNGLS','BQX','KNC','SNM','FUN','LINK','XVG','CTR','SALT','MDA','IOTA','SUB','IOT','ETC','MTL','MTH','ENG','AST','DASH','BTG','EVX','REQ','VIB','POWR','ARK','XRP','MOD','ENJ','STORJ','VEN','KMD','RCN','NULS','RDN','XMR','DLT','AMB','BAT','ZEC','BCPT','ARN','GVT','CDT','GXS','POE','QSP','BTS','XZC','LSK','TNT','FUEL','MANA','BCD','DGD','ADX','ADA','PPT','CMT','XLM','CND','LEND','WABI','SBTC','BCX','WAVES','TNB','GTO','ICX','OST','ELF','AION','ETF','BRD','NEBL','VIBE','LUN','CHAT','RLC','INS','IOST','STEEM','NANO','AE','VIA','BLZ','SYS','RPX','NCASH','POA','ONT','ZIL','STORM','XEM','WAN','WPR','QLC','GRS','EDO','WINGS','NAV','TRIG','APPC','PIVX','MFT','PHB','FET']
 
 cryptocurrencies = []
 cryptocurrencies.extend(binance_cryptos)
@@ -50,10 +50,16 @@ def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
         return Noise("Less than 3 prices")
 
     def is_likely_price(price, _prices = _prices):
+        """
+        Returns true iff pips diff is less than 1500
+        """
         sims = 0
         for ref_entry in _prices:
             points_away = pips_diff(price, ref_entry, pair)
-            likely = points_away < 1500 and points_away >= 0
+            if "BTC" in pair:
+                likely = points_away < 10000
+            else:
+                likely = points_away < 1500
             if likely:
                 sims += 1
         return sims >= 3
@@ -67,6 +73,7 @@ def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
             return Noise("Missing SL")
 
     div = 1
+
     if len(likely_prices) < 3:
         prices_ = [p/10 for p in _prices]
         likely_prices = [p for p in prices_ if is_likely_price(p, prices_)]
@@ -242,13 +249,18 @@ def getValidSetup(_type : str, pair: str, tokens: list, likely_prices: list, div
     sl = getPriceFollowing(tokens, "SL", likely_prices)
     # At least one TP
     tp = getPriceFollowing(tokens, "TP", likely_prices)
+
+    if not "BTC" in pair:
+        precision = 5
+    else:
+        precision = 9
+
     if div > 1:
-        tp = round(tp/div, 5)
-        sl = round(sl/div, 5)
-        entry = round(entry/div, 5)
-
+        tp = round(tp/div, precision)
+        sl = round(sl/div, precision)
+        entry = round(entry/div, precision)
+    
     valid_setups = []
-
     if valid_setup(_type, entry, sl, tp):
         return { 'entry': entry, 'sl': sl, 'tp': tp }
 
@@ -258,9 +270,9 @@ def getValidSetup(_type : str, pair: str, tokens: list, likely_prices: list, div
         sl = getPriceFollowing(tokens, "SL", likely_prices)
 
         if div > 1:
-            tp = round(tp/div, 5)
-            sl = round(sl/div, 5)
-            entry = round(entry/div, 5)
+            tp = round(tp/div, precision)
+            sl = round(sl/div, precision)
+            entry = round(entry/div, precision)
 
     if valid_setup(_type, entry, sl, tp):
         return { 'entry': entry, 'sl': sl, 'tp': tp }

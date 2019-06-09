@@ -27,7 +27,7 @@ def pips_diff(p1: float, p2: float, pair: str) -> int:
     if 'XAU' in pair:
         pips /= 10
     if 'BTC' in pair:
-        pips /= 100000
+        pips /= 10000
     return pips
 
 def mt4_date_parser(dct):
