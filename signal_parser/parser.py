@@ -12,13 +12,14 @@ valid_sell = lambda t,entry,sl,tp: t is "SELL" and entry < sl and tp < entry
 
 currencies = ['AUD','CAD','CHF','EUR','GBP','JPY','NZD','USD','XAU','WTI','BTC']
 pairs = [a+b for a in currencies[:-3] for b in currencies[:-3] if a is not b]
-pairs.extend(['BTCUSD','WTIUSD','XAUUSD'])
+pairs.extend(['WTIUSD','XAUUSD'])
 
 binance_cryptos = ['BNB','BTC','NEO','ETH','LTC','QTUM','EOS','SNT','BNT','GAS','BCH','BTM','USDT','HCC','HSR','OAX','DNT','MCO','ICN','ZRX','OMG','WTC','LRC','LLT','YOYO','TRX','STRAT','SNGLS','BQX','KNC','SNM','FUN','LINK','XVG','CTR','SALT','MDA','IOTA','SUB','IOT','ETC','MTL','MTH','ENG','AST','DASH','BTG','EVX','REQ','VIB','POWR','ARK','XRP','MOD','ENJ','STORJ','VEN','KMD','RCN','NULS','RDN','XMR','DLT','AMB','BAT','ZEC','BCPT','ARN','GVT','CDT','GXS','POE','QSP','BTS','XZC','LSK','TNT','FUEL','MANA','BCD','DGD','ADX','ADA','PPT','CMT','XLM','CND','LEND','WABI','SBTC','BCX','WAVES','TNB','GTO','ICX','OST','ELF','AION','ETF','BRD','NEBL','VIBE','LUN','CHAT','RLC','INS','IOST','STEEM','NANO','AE','VIA','BLZ','SYS','RPX','NCASH','POA','ONT','ZIL','STORM','XEM','WAN','WPR','QLC','GRS','EDO','WINGS','NAV','TRIG','APPC','PIVX','MFT','PHB','FET']
 
 cryptocurrencies = []
 cryptocurrencies.extend(binance_cryptos)
 crypto_pairs = [base+"/"+counter for base in cryptocurrencies for counter in cryptocurrencies if base is not counter]
+crypto_pairs.extend(['BTCUSD', 'XBTUSD'])
 
 
 def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
@@ -51,15 +52,14 @@ def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
 
     def is_likely_price(price, _prices = _prices):
         """
-        Returns true iff pips diff is less than 1500
+        Returns true iff price change is less than 10% in FX
         """
+        if pair in crypto_pairs:
+            return True
         sims = 0
         for ref_entry in _prices:
-            points_away = pips_diff(price, ref_entry, pair)
-            if "BTC" in pair:
-                likely = points_away < 10000
-            else:
-                likely = points_away < 1500
+            pct_change = ref_entry/price
+            likely = abs(1-pct_change) < 0.1 # 10 pct
             if likely:
                 sims += 1
         return sims >= 3

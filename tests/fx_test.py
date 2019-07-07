@@ -763,10 +763,6 @@ tp 1.7696""", Signal(1.77666,1.7839,1.7696,today,"SELL","p","GBPAUD"))
         self._testParser("""2:.  Usdchf 0.9921 sell now sl 0.9970 tp 0.9865 lot size 0.20 .""",
         Signal(0.9921,0.997,0.9865,today,"SELL","p","USDCHF"))
 
-    def test_75(self):
-        self._testParser("""BUY BTCUSD 18000 SL 15000 TP 22000""",
-        Signal(18000,15000,22000,today,"BUY","p","BTCUSD"))
-
     def test_76(self):
         self._testParser("""Usdcad buy now 1.3241
 Sl: 1.313
@@ -985,17 +981,16 @@ TAKE PROFIT 0.70000""", Signal(0.647, 0.64, 0.7, today, "BUY", "p", "NZDUSD"))
 🌷🎓Waves ScoUt Forex🎓🌷
 At :73.94
 SL :73.76**Risk**15Pip
-TP :76.01**Reward**205pip🎯""", Signal(0.7394, 0.7376, 0.7601, today, "BUY", "p", "CADCHF"))
+        TP :76.01**Reward**205pip🎯""", None) # "Unsafe SL: 1800.0 pips"
 
-    def test_103b(self):
-            self._testParser("""📠 Signal Number :16
+        self._testParser("""📠 Signal Number :16
 
-    #CADCHF**BUY📣
+#CADCHF**BUY📣
 
-    🌷🎓Waves ScoUt Forex🎓🌷
-    At :73.94
-    SL :73.66**Risk**25Pip
-    TP :76.01**Reward**205pip🎯""", Signal(0.7394, 0.7366, 0.7601, today, "BUY", "p", "CADCHF"))
+🌷🎓Waves ScoUt Forex🎓🌷
+At :0.7394
+SL :0.7376**Risk**15Pip
+TP :0.7601**Reward**205pip🎯""", Signal(0.7394, 0.7376, 0.7601, today, "BUY", "p", "CADCHF"))
 
     def test_104(self):
         self._testParser(""":female-technologist:GBP USD Sell Now 1.2795
@@ -1154,6 +1149,14 @@ Tp - 139.85 & 140.62
 Sl - ??
 
 Support around 138.55📣📣""", SignalList([sig1,sig2]))
+
+    def test_123(self):
+        self._testParser("""XAUUSD    BUY   1413.0  1409.0  1435.0""", Signal(1413, 1409, 1435, today, "BUY", "p", "XAUUSD"))
+        self._testParser("""2019.07.07 15:29
+ XAUUSD 🇺🇸
+☝️ BUY  🏁 1413.0
+ ✖️1409.0  🎯1435.0
+        🎲 Payoff: 5.5.""", Signal(1413, 1409, 1435, today, "BUY", "p", "XAUUSD"))
 
     def test_212(self):
         self._testParser("""Gbpjpy sell now 142.000
