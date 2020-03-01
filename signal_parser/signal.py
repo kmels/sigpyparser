@@ -181,7 +181,8 @@ class Signal (dict):
         return self.consensus.get_consensus()
 
 class SignalList(list):
-    def __init__(self, signals):        
+    def __init__(self, signals):
+        # Sorry - does not receive yet: list of SignalList, SignalList of SignalList
         are_signals = [type(x) is Signal for x in signals]
         if not all(are_signals):
             print("Types are signals: ", [type(x) for x in signals])

@@ -43,6 +43,20 @@ def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
     _tokens = text.split(" ")
     if isBuy and isSell:
         _type = "BUY" if text.index("BUY") < text.index("SELL") else "SELL"
+
+        n = text.index("SELL" if _type=="BUY" else "BUY")
+        text2 = pair + " " +text[n:]
+        text1 = pair + " " +text[0:n]
+
+        ret1 = parseSignal(text1, d, p)
+        ret2 = parseSignal(text2, d, p)
+
+        if type(ret1) and type(ret2) is SignalList:
+            return SignalList(ret1 + ret2)
+        elif type(ret1) is Signal and not type(ret2) is Signal:
+            return ret1
+        elif type(ret2) is Signal and not type(ret1) is Signal:
+            return ret2
     else:
         _type = "BUY" if isBuy else "SELL"
     _prices = [float(t) for t in _tokens if isPrice(t)]
@@ -65,7 +79,6 @@ def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
         return sims >= 3
 
     likely_prices = [p for p in _prices if is_likely_price(p)]
-
     if len(likely_prices) != 3:
         if not 'TP' in text:
             return Noise("Missing TP")
@@ -95,6 +108,11 @@ def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
         if not type(s) is dict:
             return Noise("Invalid setup.")
 
+        s['date'] = d
+        s['sign'] = _type
+        s['username'] = p
+        s['pair'] = 'XAUUSD' if pair == 'GOLD' else pair
+
         signal = Signal.from_dict(s)
         sanity_signal = signal.is_payout_safe()
         if sanity_signal:
@@ -105,12 +123,10 @@ def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
     setup = mkSafeSetup(setup)
     if not setup:
         setup = getValidSetup(_type, pair, _tokens, likely_prices, div)
-        if setup:
-            setup['date'] = d
-            setup['sign'] = _type
-            setup['username'] = p
-            setup['pair'] = 'XAUUSD' if pair == 'GOLD' else pair
-        setup = mkSafeSetup(setup)
+        if type(setup) is list:
+            setup = [mkSafeSetup(s) for s in setup]
+        elif setup:
+            setup = mkSafeSetup(setup)
 
     valid_setups = []
     if setup:
@@ -135,29 +151,32 @@ def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
             _tokens = remove_price(invp, _tokens)
 
         # check for more setups
-        next_tp_candidate = getPriceFollowing(_tokens, setup['tp'], [])
-        _tokens = remove_price(setup['tp'], _tokens)
-        prev_tp = setup['tp']
-        next_setup_candidate = getValidSetup(_type, pair, _tokens, [], div)
-        # there's another tp
-        while next_tp_candidate and type(next_setup_candidate) is dict and prev_tp != next_setup_candidate['tp']:
-            next_setup_candidate['date'] = setup['date']
-            next_setup_candidate['sign'] = _type
-            next_setup_candidate['username'] = setup['username']
-            next_setup_candidate['pair'] = setup['pair']
-
-            next_setup = mkSafeSetup(next_setup_candidate)
-            if next_setup:
-                valid_setups.append(next_setup)
-                prev_tp = next_setup['tp']
-
-            # check for more setups
-            next_tp_candidate = getPriceFollowing(_tokens, next_setup_candidate['tp'], [])
-            _tokens = remove_price(next_setup_candidate['tp'], _tokens)
-            prev_tp = next_setup_candidate['tp']
+        if type(setup) is list:
+            valid_setups = setup
+        else:
+            next_tp_candidate = getPriceFollowing(_tokens, setup['tp'], [])
+            _tokens = remove_price(setup['tp'], _tokens)
+            prev_tp = setup['tp']
             next_setup_candidate = getValidSetup(_type, pair, _tokens, [], div)
-            if not next_setup_candidate and len(likely_prices) > 0:
-                next_setup_candidate = getValidSetup(_type, pair, _tokens, likely_prices, div)
+            # there's another tp
+            while next_tp_candidate and type(next_setup_candidate) is dict and prev_tp != next_setup_candidate['tp']:
+                next_setup_candidate['date'] = setup['date']
+                next_setup_candidate['sign'] = _type
+                next_setup_candidate['username'] = setup['username']
+                next_setup_candidate['pair'] = setup['pair']
+
+                next_setup = mkSafeSetup(next_setup_candidate)
+                if next_setup:
+                    valid_setups.append(next_setup)
+                    prev_tp = next_setup['tp']
+
+                # check for more setups
+                next_tp_candidate = getPriceFollowing(_tokens, next_setup_candidate['tp'], [])
+                _tokens = remove_price(next_setup_candidate['tp'], _tokens)
+                prev_tp = next_setup_candidate['tp']
+                next_setup_candidate = getValidSetup(_type, pair, _tokens, [], div)
+                if not next_setup_candidate and len(likely_prices) > 0:
+                    next_setup_candidate = getValidSetup(_type, pair, _tokens, likely_prices, div)
 
     if len(valid_setups) == 0:
         return None
@@ -172,7 +191,8 @@ def valid_setup(t : str, e : float, s : float, tp : float) -> bool:
     """"Validate buy or sell prices."""
     if float(tp) <=0 or float(s) <= 0 or float(e) <= 0:
         return False
-    return valid_buy(t,e,s,tp) or valid_sell(t,e,s,tp)
+    ret = valid_buy(t,e,s,tp) or valid_sell(t,e,s,tp)
+    return ret
 
 def getValidCryptoPair(text : str) -> str:
     # Look for hashtags and $ first
@@ -243,7 +263,6 @@ def getPriceFollowing(tokens : list, prevtoken : str, likely_prices : list, fall
 
 def getValidSetup(_type : str, pair: str, tokens: list, likely_prices: list, div : int = 1) -> dict:
     _prices = [t for t in tokens if isPrice(t)]
-
     entry = getPriceFollowing(tokens, pair, likely_prices)
     # Only one stop loss enabled
     sl = getPriceFollowing(tokens, "SL", likely_prices)
@@ -288,8 +307,28 @@ def getValidSetup(_type : str, pair: str, tokens: list, likely_prices: list, div
             return { 'entry': entry, 'sl': tp, 'tp': sl }
 
     if len(likely_prices) > 3:
-        return getValidSetup(_type, pair, tokens, likely_prices[1:], div)
 
+        # ALL COMBINATIONS
+        xs = likely_prices
+        combinations = [[x,y,z]
+            for xi,x in enumerate(xs)
+            for yi,y in enumerate(xs) for zi,z in enumerate(xs) if x != y and y != z and xi > yi and yi > zi]
+
+        if pair in tokens:
+            tokens.remove(pair)
+            tokens = [pair] + tokens
+
+        mapped_combos = [
+            getValidSetup(_type, pair, tokens, c, div)
+            for c in combinations]
+
+        valid_combos = [v for v in mapped_combos if v]
+        if len(valid_combos) < 1:
+            pass
+        elif len(valid_combos) == 1:
+            return getValidSetup(_type, pair, tokens, valid_combos[0], div)
+        elif len(valid_combos) >= 1:
+            return valid_combos
     return False
 
 import re

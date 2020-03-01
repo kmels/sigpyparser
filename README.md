@@ -45,9 +45,13 @@ Tests
 ----
 
 ```
-python3 setup.py test
+python3 setup.py test # run all 
+python3 -m unittest tests.fx_test.TestFXParser # run all fx parser tests
+python3 -m unittest tests.crypto_tests.TestCryptoParser # run all crypto parser tests
+python3 -m unittest tests.fx_test.TestFXParser.test_215
 ```
 
 Roadmap
 ----
-* Support multiple signals with multiple targets per text
+* Support multiple signals with multiple targets per text: pass test_115 in fx_test.py
++ Test SignalList constructor for SignalList of SignalList
