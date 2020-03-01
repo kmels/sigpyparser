@@ -25,8 +25,9 @@ class TestFXParser(unittest.TestCase):
         else:
             assert(type(expected) == SignalList)
 
+            parsedType = str(type(parsedSignal))
             self.assertTrue(type(parsedSignal) == SignalList,
-                f"\n\tEXPECTED: SignalList, got %s -- {parsedSignal} -- " % str(type(parsedSignal)))
+                "\n\tEXPECTED: SignalList, got %s -- %s -- " % (parsedType, parsedSignal))
             self.assertEqual(len(parsedSignal), len(expected),
                 "\n\tEXPECTED: %d, got %d" % (len(expected),len(parsedSignal)))
 
