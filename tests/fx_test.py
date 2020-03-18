@@ -1228,6 +1228,11 @@ SL : 1660.38 XAUUSD
             SignalList([buy1, buy2, buy3, sell1, sell2, sell3])
         )
         
+
+    def test_219(self):
+        text = "2020.02.24 02:25 GBPCAD buy now @1.7090\nSl, @1.7000\nTp, @1.7400"
+        expected = Signal(1.7090, 1.70, 1.74, datetime(2020,2,24,2,25), "BUY", "p", "GBPCAD")
+        self._testParser(text, expected)
     def test_multiple(self):
         #(1288, 1265, [1291.0, 1300.0, 1311.0, 1324.0], today, "BUY", "p", "XAUUSD")
 

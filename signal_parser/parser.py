@@ -10,7 +10,7 @@ from . import *
 valid_buy = lambda t,entry,sl,tp: t is "BUY" and entry > sl and tp > entry
 valid_sell = lambda t,entry,sl,tp: t is "SELL" and entry < sl and tp < entry
 
-currencies = ['AUD','CAD','CHF','EUR','GBP','JPY','NZD','USD','XAU','WTI','BTC']
+currencies = ['AUD','CAD','CHF','EUR','GBP','JPY','NZD','USD','XAU','WTI','BTC','ZAR']
 pairs = [a+b for a in currencies[:-3] for b in currencies[:-3] if a is not b]
 pairs.extend(['WTIUSD','XAUUSD'])
 
@@ -22,12 +22,21 @@ crypto_pairs = [base+"/"+counter for base in cryptocurrencies for counter in cry
 crypto_pairs.extend(['BTCUSD', 'XBTUSD'])
 
 
-def parseSignal(t: str, d: datetime = datetime.utcnow(), p: str = ""):
+def parseSignal(t: str, d: datetime = None, p: str = ""):
     """
     Given a text with some signal, returns either Signal, SignalList or Noise. 
     """
     if t is None:
         return Noise("Empty text")
+
+    # Extract date from signal in MT4 format
+    res = re.search("\d{4}\\.\d{2}\\.\\d{2} \d\d?:\d\d?", t)
+    if res != None:
+        start_pos = res.start()
+        d = datetime.strptime(t[start_pos:start_pos+16], "%Y.%m.%d %H:%M")
+
+    if not d:
+        d = datetime.utcnow()
 
     text = normalizeText(t)
     isBuy = 'BUY' in text
