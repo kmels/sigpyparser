@@ -21,12 +21,12 @@ cryptocurrencies.extend(binance_cryptos)
 crypto_pairs = [base+"/"+counter for base in cryptocurrencies for counter in cryptocurrencies if base is not counter]
 crypto_pairs.extend(['BTCUSD', 'XBTUSD'])
 
-def is_likely_price(price, _prices):
+def is_likely_price(price, _prices, pair):
     """
     Returns true iff price change is less than 15% in FX
     """
-    #if pair in crypto_pairs:
-    #    return True
+    if pair in crypto_pairs:
+        return True
     sims = 0
     for ref_entry in _prices:
         pct_change = ref_entry/price
@@ -36,7 +36,7 @@ def is_likely_price(price, _prices):
     return sims >= 3
     
 def find_valid_setups(_prices, _tokens, text, pair, _type, d: datetime, p: ""):
-    likely_prices = [p for p in _prices if is_likely_price(p, _prices)]
+    likely_prices = [p for p in _prices if is_likely_price(p, _prices, pair)]
     if len(likely_prices) != 3:
         if not 'TP' in _tokens:
             return Noise("Missing TP")
@@ -47,12 +47,12 @@ def find_valid_setups(_prices, _tokens, text, pair, _type, d: datetime, p: ""):
 
     if len(likely_prices) < 3:
         prices_ = [p/10 for p in _prices]
-        likely_prices = [p for p in prices_ if is_likely_price(p, prices_)]
+        likely_prices = [p for p in prices_ if is_likely_price(p, prices_, pair)]
         div = 10
 
         if len(likely_prices) < 3:
             prices_ = [p/10 for p in prices_]
-            likely_prices = [p for p in prices_ if is_likely_price(p, prices_)]
+            likely_prices = [p for p in prices_ if is_likely_price(p, prices_, pair)]
             div = 100
 
     setup = getValidSetup(_type, pair, _tokens, [], div)
@@ -85,14 +85,14 @@ def find_valid_setups(_prices, _tokens, text, pair, _type, d: datetime, p: ""):
             setup = [mkSafeSetup(s) for s in setup]
         elif setup:
             setup = mkSafeSetup(setup)
-        """else:
+        else:
             # no valid setups, then try:
             # remove first 'tp'  (if HTTPS is before TP)
             new_begin = _tokens.index("TP")
             setup = getValidSetup(_type, pair, _tokens[new_begin+1:], likely_prices, div)
             if setup:
                 setup = mkSafeSetup(setup)
-        """
+
     valid_setups = []
     if setup:
         valid_setups.append(setup)
@@ -144,7 +144,7 @@ def find_valid_setups(_prices, _tokens, text, pair, _type, d: datetime, p: ""):
                     next_setup_candidate = getValidSetup(_type, pair, _tokens, likely_prices, div)
     return valid_setups  
         
-def parseSignal(t: str, d: datetime = None, p: str = "", debug_noise = False):
+def parseSignal(t: str, d: datetime = None, p: str = ""):
     """
     Given a text with some signal, returns either Signal, SignalList or Noise. 
     """
@@ -203,12 +203,10 @@ def parseSignal(t: str, d: datetime = None, p: str = "", debug_noise = False):
         return Noise("Less than 3 prices")
 
     valid_setups = find_valid_setups(_prices, _tokens, text, pair, _type, d, p)
-
-    if len(valid_setups) == 0:
-        if debug_noise:
-            return None#Noise("Attempted setups: {0}, {1}, {2}, {3}".format(_type, pair, _tokens, [], div))
-        else:
-            return None
+    if type(valid_setups) is Noise:
+        return valid_setups
+    elif len(valid_setups) == 0:
+        return None
     else:
         if len(valid_setups) == 1:
             assert(type(valid_setups[0]) is Signal)

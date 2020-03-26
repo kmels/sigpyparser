@@ -65,29 +65,30 @@ class Signal (dict):
         sl_pips = abs(float(self['entry'])-float(self['sl'])) * 100
         if ('XAU' in self['pair']):
             sl_pips /= 10
-        if (not 'JPY' in self['pair'] and not 'XAU' in self['pair'] and not 'BTC' in self['pair']):
+        if all([not p in self['pair'] for p in ['JPY','XAU','BTC']]):
             sl_pips *= 100
-        if ('BTC' in self['pair']):
+        if any([p in self['pair'] for p in ['BTC','ZAR']]):
             sl_pips /= 100
         return round(sl_pips,1)
 
     def tp_pips(self) -> int:
         tp_pips = abs(float(self['entry'])-float(self['tp'])) * 100
         if ('XAU' in self['pair']):
-            tp_pips /= 10
-        if (not 'JPY' in self['pair'] and not 'XAU' in self['pair'] and not 'BTC' in self['pair']):
+            tp_pips /= 1000
+        if all([not p in self['pair'] for p in ['JPY','XAU','BTC']]):
             tp_pips *= 100
-        if ('BTC' in self['pair']):
+        if any([p in self['pair'] for p in ['BTC','ZAR']]):
             tp_pips /= 100
+
         return round(tp_pips,1)
 
-    def is_payout_safe(self) -> bool:
+    def is_payout_safe(self, max_payout = 25.0, min_payout = 0.1, max_sl_pips = 500, min_sl_pips = 10.0) -> bool:
         if 'BTC' in self['pair']:
             return True
         else:
             if not 'sl_pips' in self:
                 return Noise("Missing SL")
-            if not self.odds() < 25.0 and self.odds() >= 0.1:
+            if not self.odds() < max_payout and self.odds() >= min_payout:
                 return Noise("Unsafe payout: %.1f odds" % self.odds())
             if not (self['sl_pips'] <= 500 and self['sl_pips'] >= 10):
                 return Noise("Unsafe SL: %.1f pips" % self['sl_pips'])

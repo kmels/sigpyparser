@@ -12,7 +12,7 @@ def _parseSignal(t: str):
 
 class TestFXParser(unittest.TestCase):
 
-    def _testParser(self,text,expected):
+    def _testParser(self, text,expected):
         parsedSignal = _parseSignal(text)
 
         if type(expected) in [Signal,Noise,type(None)]:
@@ -300,7 +300,7 @@ SL: 0.73300""", SignalList([sig1,sig2]))
 👉 TP SET 1.29000
 👉NO SL
 
-🌹FOREX MINISTER 🌹""", None)
+🌹FOREX MINISTER 🌹""", Signal(1.24700, 1.24000, 1.29000, today, "BUY", "p", "USDCAD"))
 
     def test_21(self):
         sig1 = Signal(1.0915, 1.0995, 1.0840, today, "SELL", "p", "AUDNZD")
@@ -696,7 +696,7 @@ SL 134.00""", Signal(133.4,134,132,today,"SELL","p","EURJPY"))
     def test_70(self):
         self._testParser("""Sell limit Euraud
 at 1.5630 & 1.5530
-SL 1.5730 Tp leave open""", None)
+SL 1.5730 Tp leave open""", Signal(1.5630,1.573,1.5530, today, "SELL", "p","EURAUD"))
 
     def test_71(self):
         self._testParser("""❗️EurAud❕Buy ❕1.55500❗️
@@ -1228,11 +1228,52 @@ SL : 1660.38 XAUUSD
             SignalList([buy1, buy2, buy3, sell1, sell2, sell3])
         )
         
+    def test_216(self):
+        text = """
+USDZAR buy now @15.625
+Sl,@15.440
+Tp,@15.900"""
+        expected = Signal(15.625, 15.44, 15.9, today, "BUY", "p", "USDZAR")
+        self._testParser(text, expected)
+
+
+    def test_217(self):
+        text = """
+        CHFJPY Sell Now 13.660
+🔹TP 112.000
+🔺SL 114.310
+©Copyright Reserved"""
+        self._testParser(text, None)
+
+    def test_218(self):
+        text = """SELL 0.6433 nzdusd tp 0.6265 SL 0.6530"""
+        expected = Signal(0.6433, 0.6530, 0.6265, today, "SELL", "p", "NZDUSD")
+        self._testParser(text, expected)
 
     def test_219(self):
         text = "2020.02.24 02:25 GBPCAD buy now @1.7090\nSl, @1.7000\nTp, @1.7400"
         expected = Signal(1.7090, 1.70, 1.74, datetime(2020,2,24,2,25), "BUY", "p", "GBPCAD")
         self._testParser(text, expected)
+
+    def test_220(self):
+        text = """Gbpchf buy 1.15550
+Sl 1.13300 (All)
+Tp 1.19350
+Tp 1.29100"""
+        expected = Signal(1.1555, 1.1330, 1.1935, today, "BUY", "p", "GBPCHF")
+        self._testParser(text, expected)
+
+    def test_221(self):
+        text = """https://www.tradingview.com/x/AdlDE3xX/
+#AUDUSD
+BUY NOW @ 0.65616
+SL = 0.65125
+TP1 = 0.66196
+TP2 = 0.67418
+TP3 = 0.68418"""
+        expected = Signal(0.65616, 0.65125, 0.66196, today, "BUY", "p", "AUDUSD")
+        self._testParser(text, expected)
+
     def test_multiple(self):
         #(1288, 1265, [1291.0, 1300.0, 1311.0, 1324.0], today, "BUY", "p", "XAUUSD")
 
