@@ -1115,7 +1115,7 @@ GOLD sell now  at --------------------1291.33📊
     def test_118(self):
         self._testParser("""CADJPY W1 WHISKER SUPPORT : 2019.01.06 00:00 BUY @ 81.139½
 TP:  81.851 (71.2 pips)SL: 76.754 (438.5 pips)Bid: 81.162Ask: 81.170Spread:
-0.8Previous Low = 76.75401:36 International Capital Markets Pty Ltd.""", Signal(81.139, 76.754, 81.851, today, "BUY", "p", "CADJPY"))
+0.8Previous Low = 76.75401:36 International Capital Markets Pty Ltd.""", Signal(81.139, 76.754, 81.851, datetime(2019,1,6), "BUY", "p", "CADJPY"))
 
     def test_119(self):
         self._testParser("""On More Extra Signal On Request of Followrs
@@ -1157,7 +1157,7 @@ Support around 138.55📣📣""", SignalList([sig1,sig2]))
  XAUUSD 🇺🇸
 ☝️ BUY  🏁 1413.0
  ✖️1409.0  🎯1435.0
-        🎲 Payoff: 5.5.""", Signal(1413, 1409, 1435, today, "BUY", "p", "XAUUSD"))
+        🎲 Payoff: 5.5.""", Signal(1413, 1409, 1435, datetime(2019,7,7,15,29), "BUY", "p", "XAUUSD"))
 
     def test_212(self):
         self._testParser("""Gbpjpy sell now 142.000

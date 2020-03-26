@@ -33,7 +33,14 @@ def parseSignal(t: str, d: datetime = None, p: str = ""):
     res = re.search("\d{4}\\.\d{2}\\.\\d{2} \d\d?:\d\d?", t)
     if res != None:
         start_pos = res.start()
-        d = datetime.strptime(t[start_pos:start_pos+16], "%Y.%m.%d %H:%M")
+        # Check: expiry date
+        expiry = 'EXPIR' in t.upper()
+        if expiry:
+            expiry_pos = t.upper().index('EXPIR')
+            if expiry_pos > start_pos:
+                d = datetime.strptime(t[start_pos:start_pos+16], "%Y.%m.%d %H:%M")    
+        else:
+            d = datetime.strptime(t[start_pos:start_pos+16], "%Y.%m.%d %H:%M")
 
     if not d:
         d = datetime.utcnow()
