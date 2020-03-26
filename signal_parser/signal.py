@@ -47,7 +47,7 @@ class Signal (dict):
         )
         self['hash'] = myhash(self['mt4_rep'])
         self['odds'] = self.odds()
-        #self['tp_pips'] = self.tp_pips()
+        self['tp_pips'] = self.tp_pips()
         self['sl_pips'] = self.sl_pips()
 
     def odds(self) -> float:
@@ -69,7 +69,7 @@ class Signal (dict):
             sl_pips *= 100
         if ('BTC' in self['pair']):
             sl_pips /= 100
-        return sl_pips
+        return round(sl_pips,1)
 
     def tp_pips(self) -> int:
         tp_pips = abs(float(self['entry'])-float(self['tp'])) * 100
@@ -79,7 +79,7 @@ class Signal (dict):
             tp_pips *= 100
         if ('BTC' in self['pair']):
             tp_pips /= 100
-        return tp_pips
+        return round(tp_pips,1)
 
     def is_payout_safe(self) -> bool:
         if 'BTC' in self['pair']:

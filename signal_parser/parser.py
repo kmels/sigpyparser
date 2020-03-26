@@ -21,8 +21,130 @@ cryptocurrencies.extend(binance_cryptos)
 crypto_pairs = [base+"/"+counter for base in cryptocurrencies for counter in cryptocurrencies if base is not counter]
 crypto_pairs.extend(['BTCUSD', 'XBTUSD'])
 
+def is_likely_price(price, _prices):
+    """
+    Returns true iff price change is less than 15% in FX
+    """
+    #if pair in crypto_pairs:
+    #    return True
+    sims = 0
+    for ref_entry in _prices:
+        pct_change = ref_entry/price
+        likely = abs(1-pct_change) < 0.1 # 10 pct
+        if likely:
+            sims += 1
+    return sims >= 3
+    
+def find_valid_setups(_prices, _tokens, text, pair, _type, d: datetime, p: ""):
+    likely_prices = [p for p in _prices if is_likely_price(p, _prices)]
+    if len(likely_prices) != 3:
+        if not 'TP' in _tokens:
+            return Noise("Missing TP")
+        if not 'SL' in _tokens:
+            return Noise("Missing SL")
 
-def parseSignal(t: str, d: datetime = None, p: str = ""):
+    div = 1
+
+    if len(likely_prices) < 3:
+        prices_ = [p/10 for p in _prices]
+        likely_prices = [p for p in prices_ if is_likely_price(p, prices_)]
+        div = 10
+
+        if len(likely_prices) < 3:
+            prices_ = [p/10 for p in prices_]
+            likely_prices = [p for p in prices_ if is_likely_price(p, prices_)]
+            div = 100
+
+    setup = getValidSetup(_type, pair, _tokens, [], div)
+    if setup:
+        setup['date'] = d
+        setup['sign'] = _type
+        setup['username'] = p
+        setup['pair'] = 'XAUUSD' if pair == 'GOLD' else pair
+
+    def mkSafeSetup(s : dict) -> dict:
+        if not type(s) is dict:
+            return Noise("Invalid setup.")
+
+        s['date'] = d
+        s['sign'] = _type
+        s['username'] = p
+        s['pair'] = 'XAUUSD' if pair == 'GOLD' else pair
+
+        signal = Signal.from_dict(s)
+        sanity_signal = signal.is_payout_safe()
+        if sanity_signal:
+            return signal
+        else:
+            return sanity_signal
+
+    setup = mkSafeSetup(setup)
+    if not setup:
+        setup = getValidSetup(_type, pair, _tokens, likely_prices, div)
+        if type(setup) is list:
+            setup = [mkSafeSetup(s) for s in setup]
+        elif setup:
+            setup = mkSafeSetup(setup)
+        """else:
+            # no valid setups, then try:
+            # remove first 'tp'  (if HTTPS is before TP)
+            new_begin = _tokens.index("TP")
+            setup = getValidSetup(_type, pair, _tokens[new_begin+1:], likely_prices, div)
+            if setup:
+                setup = mkSafeSetup(setup)
+        """
+    valid_setups = []
+    if setup:
+        valid_setups.append(setup)
+
+        def remove_price(p: float, ts: list):
+            replacements = [(t,float(t)) for t in ts if isPrice(t) and str(float(t)) != t]
+            pstr = str(float(p))
+            if len(replacements) > 0:
+                tstrs = "\t".join(ts)
+                for rep in replacements:
+                    tstrs = tstrs.replace("\t"+rep[0]+"\t", "\t"+str(rep[1]) + "\t")
+                ts = tstrs.split("\t")
+
+            if pstr in ts:
+                ts.remove(pstr)
+            return ts
+
+        prices = [float(pr) for pr in _tokens if isPrice(pr)]
+        unlikely_prices = [pr for pr in prices if not float(pr) in likely_prices]
+        for invp in unlikely_prices:
+            _tokens = remove_price(invp, _tokens)
+
+        # check for more setups
+        if type(setup) is list:
+            valid_setups = setup
+        else:
+            next_tp_candidate = getPriceFollowing(_tokens, setup['tp'], [])
+            _tokens = remove_price(setup['tp'], _tokens)
+            prev_tp = setup['tp']
+            next_setup_candidate = getValidSetup(_type, pair, _tokens, [], div)
+            # there's another tp
+            while next_tp_candidate and type(next_setup_candidate) is dict and prev_tp != next_setup_candidate['tp']:
+                next_setup_candidate['date'] = setup['date']
+                next_setup_candidate['sign'] = _type
+                next_setup_candidate['username'] = setup['username']
+                next_setup_candidate['pair'] = setup['pair']
+
+                next_setup = mkSafeSetup(next_setup_candidate)
+                if next_setup:
+                    valid_setups.append(next_setup)
+                    prev_tp = next_setup['tp']
+
+                # check for more setups
+                next_tp_candidate = getPriceFollowing(_tokens, next_setup_candidate['tp'], [])
+                _tokens = remove_price(next_setup_candidate['tp'], _tokens)
+                prev_tp = next_setup_candidate['tp']
+                next_setup_candidate = getValidSetup(_type, pair, _tokens, [], div)
+                if not next_setup_candidate and len(likely_prices) > 0:
+                    next_setup_candidate = getValidSetup(_type, pair, _tokens, likely_prices, div)
+    return valid_setups  
+        
+def parseSignal(t: str, d: datetime = None, p: str = "", debug_noise = False):
     """
     Given a text with some signal, returns either Signal, SignalList or Noise. 
     """
@@ -80,122 +202,13 @@ def parseSignal(t: str, d: datetime = None, p: str = ""):
     if len(_prices)<3:
         return Noise("Less than 3 prices")
 
-    def is_likely_price(price, _prices = _prices):
-        """
-        Returns true iff price change is less than 10% in FX
-        """
-        if pair in crypto_pairs:
-            return True
-        sims = 0
-        for ref_entry in _prices:
-            pct_change = ref_entry/price
-            likely = abs(1-pct_change) < 0.1 # 10 pct
-            if likely:
-                sims += 1
-        return sims >= 3
-
-    likely_prices = [p for p in _prices if is_likely_price(p)]
-    if len(likely_prices) != 3:
-        if not 'TP' in text:
-            return Noise("Missing TP")
-        if not 'SL' in text:
-            return Noise("Missing SL")
-
-    div = 1
-
-    if len(likely_prices) < 3:
-        prices_ = [p/10 for p in _prices]
-        likely_prices = [p for p in prices_ if is_likely_price(p, prices_)]
-        div = 10
-
-        if len(likely_prices) < 3:
-            prices_ = [p/10 for p in prices_]
-            likely_prices = [p for p in prices_ if is_likely_price(p, prices_)]
-            div = 100
-
-    setup = getValidSetup(_type, pair, _tokens, [], div)
-    if setup:
-        setup['date'] = d
-        setup['sign'] = _type
-        setup['username'] = p
-        setup['pair'] = 'XAUUSD' if pair == 'GOLD' else pair
-
-    def mkSafeSetup(s : dict) -> dict:
-        if not type(s) is dict:
-            return Noise("Invalid setup.")
-
-        s['date'] = d
-        s['sign'] = _type
-        s['username'] = p
-        s['pair'] = 'XAUUSD' if pair == 'GOLD' else pair
-
-        signal = Signal.from_dict(s)
-        sanity_signal = signal.is_payout_safe()
-        if sanity_signal:
-            return signal
-        else:
-            return sanity_signal
-
-    setup = mkSafeSetup(setup)
-    if not setup:
-        setup = getValidSetup(_type, pair, _tokens, likely_prices, div)
-        if type(setup) is list:
-            setup = [mkSafeSetup(s) for s in setup]
-        elif setup:
-            setup = mkSafeSetup(setup)
-
-    valid_setups = []
-    if setup:
-        valid_setups.append(setup)
-
-        def remove_price(p: float, ts: list):
-            replacements = [(t,float(t)) for t in ts if isPrice(t) and str(float(t)) != t]
-            pstr = str(float(p))
-            if len(replacements) > 0:
-                tstrs = "\t".join(ts)
-                for rep in replacements:
-                    tstrs = tstrs.replace("\t"+rep[0]+"\t", "\t"+str(rep[1]) + "\t")
-                ts = tstrs.split("\t")
-
-            if pstr in ts:
-                ts.remove(pstr)
-            return ts
-
-        prices = [float(pr) for pr in _tokens if isPrice(pr)]
-        unlikely_prices = [pr for pr in prices if not float(pr) in likely_prices]
-        for invp in unlikely_prices:
-            _tokens = remove_price(invp, _tokens)
-
-        # check for more setups
-        if type(setup) is list:
-            valid_setups = setup
-        else:
-            next_tp_candidate = getPriceFollowing(_tokens, setup['tp'], [])
-            _tokens = remove_price(setup['tp'], _tokens)
-            prev_tp = setup['tp']
-            next_setup_candidate = getValidSetup(_type, pair, _tokens, [], div)
-            # there's another tp
-            while next_tp_candidate and type(next_setup_candidate) is dict and prev_tp != next_setup_candidate['tp']:
-                next_setup_candidate['date'] = setup['date']
-                next_setup_candidate['sign'] = _type
-                next_setup_candidate['username'] = setup['username']
-                next_setup_candidate['pair'] = setup['pair']
-
-                next_setup = mkSafeSetup(next_setup_candidate)
-                if next_setup:
-                    valid_setups.append(next_setup)
-                    prev_tp = next_setup['tp']
-
-                # check for more setups
-                next_tp_candidate = getPriceFollowing(_tokens, next_setup_candidate['tp'], [])
-                _tokens = remove_price(next_setup_candidate['tp'], _tokens)
-                prev_tp = next_setup_candidate['tp']
-                next_setup_candidate = getValidSetup(_type, pair, _tokens, [], div)
-                if not next_setup_candidate and len(likely_prices) > 0:
-                    next_setup_candidate = getValidSetup(_type, pair, _tokens, likely_prices, div)
+    valid_setups = find_valid_setups(_prices, _tokens, text, pair, _type, d, p)
 
     if len(valid_setups) == 0:
-        return None
+        if debug_noise:
+            return None#Noise("Attempted setups: {0}, {1}, {2}, {3}".format(_type, pair, _tokens, [], div))
+        else:
+            return None
     else:
         if len(valid_setups) == 1:
             assert(type(valid_setups[0]) is Signal)
