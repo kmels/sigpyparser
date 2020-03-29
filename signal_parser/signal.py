@@ -50,9 +50,19 @@ class Signal (dict):
         self['tp_pips'] = self.tp_pips()
         self['sl_pips'] = self.sl_pips()
 
+    def canonical(self):
+        return self
+
     def odds(self) -> float:
-        payout_odds = (float(self['tp'])-float(self['entry']))/(float(self['entry'])-float(self['sl']))
-        return float("%.1f" % payout_odds)
+
+        def payoff(tp,entry):
+            payout_odds = (float(self['tp'])-float(self['entry']))/(float(self['entry'])-float(self['sl']))
+            return float("%.1f" % payout_odds)
+
+        if type(self['tp']) is list:
+            return [payoff(tp, self['entry']) for tp in self['tp']]
+        else:
+            return payoff(self['tp'], self['entry'])
 
     def set_date(self, date):
         self['date'] = date
@@ -196,3 +206,58 @@ class SignalList(list):
 
         assert( len(unique_hashes) == len(signals), "Signals hashes in SignalList must be unique")
         assert( len(unique_hashes) == len(unique_reps), "Signals reps in SignalList must be unique")
+
+    def canonical(self):
+        # Returns multiple take profits as one signal
+        # with a list for the field `tp`.
+
+        import copy
+        # Case 1: one stop loss, multilple take profits - RPT = RPT/Number of TPs
+        # Case 2: multiple signals (buy and sell) - RPT = RPT
+        # Case 3: multiple pairs - RPT = RPT
+        unique = lambda q: len(set([r[q] for r in self])) == 1
+        multiple_tp = unique('sign') and unique('pair') and unique('sl')
+        buy_and_sell = unique('pair') and not unique('sign')
+        if (multiple_tp):
+
+            # case 1:
+            # return a signal with multiple tp's ('tp' is list)
+            take_profits = [s['tp'] for s in self]
+            ret_sig = copy.deepcopy(self[0])
+            ret_sig['tp'] = take_profits
+
+            payoffs = [s['odds'] for s in self]
+            ret_sig['odds'] = payoffs
+            return ret_sig
+        elif (buy_and_sell):
+
+            # case 2:
+            # group by stop loss
+            grouped_by_sl = {}
+
+            for r in self:
+                if not r['sl'] in grouped_by_sl:
+                    grouped_by_sl[r['sl']] = []
+                grouped_by_sl[r['sl']].append(r)
+            return [SignalList(g).canonical() for g in grouped_by_sl.values()]
+
+        else:
+
+            # case 3:
+            # multiple pairs
+
+            grouped_by_pair = {}
+
+            for r in self:
+                if not r['pair'] in grouped_by_pair:
+                    grouped_by_pair[r['pair']] = []
+                grouped_by_pair[r['pair']].append(r)
+
+
+            canonicals = []
+            for c in [SignalList(g).canonical() for g in grouped_by_pair.values()]:
+                if type(c) is Signal:
+                    canonicals.append(c)
+                else:
+                    canonicals.extend(c.canonical())
+            return canonicals

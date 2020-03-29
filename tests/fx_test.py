@@ -1205,9 +1205,10 @@ SL : 1665.73 #Gold"""
         buy2 = Signal(1668.73, 1665.73, 1670.73, today, "BUY", "p", "XAUUSD")
         buy3 = Signal(1668.73, 1665.73, 1671.73, today, "BUY", "p", "XAUUSD")
         
-        self._testParser(text1, 
-            SignalList([buy1, buy2, buy3])
-        )
+        expected = SignalList([buy1, buy2, buy3])
+        self._testParser(text1, expected)
+        expected = expected.canonical()
+        self.assertEqual([1669.73, 1670.73, 1671.73], expected['tp'])
 
         text2 = """
 2. SELL STOP = 1657.38
@@ -1220,14 +1221,24 @@ SL : 1660.38 XAUUSD
         sell2 = Signal(1657.38, 1660.38, 1655.38, today, "SELL", "p", "XAUUSD")
         sell3 = Signal(1657.38, 1660.38, 1654.38, today, "SELL", "p", "XAUUSD")
         
-        self._testParser(text2, 
-            SignalList([sell1, sell2, sell3])
-        )
+        self._testParser(text2, SignalList([sell1, sell2, sell3]))
         
-        self._testParser(text, 
-            SignalList([buy1, buy2, buy3, sell1, sell2, sell3])
-        )
-        
+        expected = SignalList([buy1, buy2, buy3, sell1, sell2, sell3])
+        self._testParser(text, expected)
+
+        expected = expected.canonical()
+        self.assertEqual(len(expected),2)
+
+        self.assertEqual('BUY', expected[0]['sign'])
+        self.assertEqual(1668.73, expected[0]['entry'])
+        self.assertEqual([0.3, 0.7, 1.0], expected[0]['odds'])
+        self.assertEqual([1669.73, 1670.73, 1671.73], expected[0]['tp'])
+
+        self.assertEqual('SELL', expected[1]['sign'])
+        self.assertEqual(1657.38, expected[1]['entry'])
+        self.assertEqual([0.3,0.7,1.0], expected[1]['odds'])
+        self.assertEqual([1656.38, 1655.38, 1654.38], expected[1]['tp'])
+
     def test_216(self):
         text = """
 USDZAR buy now @15.625
@@ -1274,9 +1285,20 @@ TP3 = 0.68418"""
         expected = Signal(0.65616, 0.65125, 0.66196, today, "BUY", "p", "AUDUSD")
         self._testParser(text, expected)
 
-    def test_multiple(self):
-        #(1288, 1265, [1291.0, 1300.0, 1311.0, 1324.0], today, "BUY", "p", "XAUUSD")
+    def test_222(self):
+        text = """Gbpusd sell 1.29800
+Sl 1.30850
+Tp 1.28350
+Tp 1.27800"""
 
+        expected1 = Signal(1.2980, 1.3085, 1.2835, today, "SELL", "p", "GBPUSD")
+        expected2 = Signal(1.2980, 1.3085, 1.278, today, "SELL", "p", "GBPUSD")
+        expected = SignalList([expected1, expected2])
+        canonical = expected.canonical()
+        self.assertEqual([1.2835, 1.278], canonical['tp'])
+        self.assertEqual([1.4,1.9], canonical['odds'])
+
+    def test_223(self):
         signal1 = Signal(1288.0, 1265.0, 1291.0, today, "BUY", "p", "XAUUSD")
         signal2 = Signal(1288.0, 1265.0, 1300.0, today, "BUY", "p", "XAUUSD")
         signal3 = Signal(1288.0, 1265.0, 1311.0, today, "BUY", "p", "XAUUSD")
