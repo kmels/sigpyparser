@@ -38,13 +38,21 @@ class Signal (dict):
         precise = "%.5f"
         if "BTC" in pair:
             precise = "%.9f"
-
-        self['mt4_rep'] = ("%s %s %s "+precise+" SL "+precise+" TP "+precise) % (
-            mt4_date, pair, sign, float(entry), float(sl), float(tp)
-        )
-        self['unique_rep'] = ("%s %s "+precise+" SL "+precise+" TP "+precise) % (
-            pair, sign, float(entry), float(sl), float(tp)
-        )
+        
+        if type(tp) is list:
+            self['mt4_rep'] = ("%s %s %s "+precise+" SL "+precise+" TP %s") % (
+                mt4_date, pair, sign, float(entry), float(sl), " ".join([str(precise % t) for t in tp])
+            )
+            self['unique_rep'] = ("%s %s "+precise+" SL "+precise+" TP %s") % (
+                pair, sign, float(entry), float(sl), " ".join([str(precise % t) for t in tp])
+            )
+        else:
+            self['mt4_rep'] = ("%s %s %s "+precise+" SL "+precise+" TP "+precise) % (
+                mt4_date, pair, sign, float(entry), float(sl), float(tp)
+            )
+            self['unique_rep'] = ("%s %s "+precise+" SL "+precise+" TP "+precise) % (
+                pair, sign, float(entry), float(sl), float(tp)
+            )
         self['hash'] = myhash(self['mt4_rep'])
         self['odds'] = self.odds()
         self['tp_pips'] = self.tp_pips()
@@ -56,8 +64,12 @@ class Signal (dict):
     def odds(self) -> float:
 
         def payoff(tp,entry):
-            payout_odds = (float(self['tp'])-float(self['entry']))/(float(self['entry'])-float(self['sl']))
-            return float("%.1f" % payout_odds)
+            if type(self['tp']) is list:
+                payout_odds = [(float(target)-float(self['entry']))/(float(self['entry'])-float(self['sl'])) for target in self['tp']]
+                return [float("%.1f" % o) for o in payout_odds]
+            else:
+                payout_odds = (float(self['tp'])-float(self['entry']))/(float(self['entry'])-float(self['sl']))
+                return float("%.1f" % payout_odds)
 
         if type(self['tp']) is list:
             return [payoff(tp, self['entry']) for tp in self['tp']]
@@ -82,15 +94,22 @@ class Signal (dict):
         return round(sl_pips,1)
 
     def tp_pips(self) -> int:
-        tp_pips = abs(float(self['entry'])-float(self['tp'])) * 100
-        if ('XAU' in self['pair']):
-            tp_pips /= 1000
-        if all([not p in self['pair'] for p in ['JPY','XAU','BTC']]):
-            tp_pips *= 100
-        if any([p in self['pair'] for p in ['BTC','ZAR']]):
-            tp_pips /= 100
 
-        return round(tp_pips,1)
+        def pipdist(target):
+            tp_pips = abs(float(self['entry'])-float(target)) * 100
+            if ('XAU' in self['pair']):
+                tp_pips /= 1000
+            if all([not p in self['pair'] for p in ['JPY','XAU','BTC']]):
+                tp_pips *= 100
+            if any([p in self['pair'] for p in ['BTC','ZAR']]):
+                tp_pips /= 100
+            return tp_pips
+        
+        if type(self['tp']) is list:
+            tp_pips = [pipdist(t) for t in self['tp']]
+        else:
+            tp_pips = pipdist(self['tp'])
+            return round(tp_pips,1)
 
     def is_payout_safe(self, max_payout = 25.0, min_payout = 0.1, max_sl_pips = 500, min_sl_pips = 10.0) -> bool:
         if 'BTC' in self['pair']:
@@ -194,6 +213,7 @@ class Signal (dict):
 class SignalList(list):
     def __init__(self, signals):
         # Sorry - does not receive yet: list of SignalList, SignalList of SignalList
+        signals = [e for e in signals if not type(e) is Noise]
         are_signals = [type(x) is Signal for x in signals]
         if not all(are_signals):
             print("Types are signals: ", [type(x) for x in signals])
@@ -206,7 +226,8 @@ class SignalList(list):
 
         assert( len(unique_hashes) == len(signals), "Signals hashes in SignalList must be unique")
         assert( len(unique_hashes) == len(unique_reps), "Signals reps in SignalList must be unique")
-
+        if len(self) == 1:
+            self = self[0]
     def canonical(self):
         # Returns multiple take profits as one signal
         # with a list for the field `tp`.
@@ -223,8 +244,11 @@ class SignalList(list):
             # case 1:
             # return a signal with multiple tp's ('tp' is list)
             take_profits = [s['tp'] for s in self]
+            target_pips  = [s['tp_pips'] for s in self]
+            
             ret_sig = copy.deepcopy(self[0])
             ret_sig['tp'] = take_profits
+            ret_sig['tp_pips'] = target_pips
 
             payoffs = [s['odds'] for s in self]
             ret_sig['odds'] = payoffs
