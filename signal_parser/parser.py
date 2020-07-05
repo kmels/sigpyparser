@@ -394,6 +394,8 @@ def normalizeText(t: str) -> str:
     t = re.sub("SELL STOP","SELL",t)
     t = re.sub("SELL LIMIT","SELL",t)
     t = re.sub("BUY STOP","BUY",t)
+    t = re.sub("BOUGHT","BUY",t)
+    t = re.sub("SOLD","SELL",t)
     t = re.sub("BUY LIMIT","BUY",t)
     t = re.sub("LONG","BUY",t)
     t = re.sub("(SELL|BUY) TERM","",t)

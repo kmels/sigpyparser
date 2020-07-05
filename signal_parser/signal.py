@@ -19,6 +19,7 @@ flags_sym_ = lambda c: flags_[c] if c in flags else ""
 class Signal (dict):
     def __init__(self, entry : float, sl : float, tp : float, date : datetime, sign : str, username : str, pair : str,
                     inserted_at : datetime = None, outcomes : list = []):
+
         self['entry'] = entry
         self['sl'] = sl
         self['tp'] = tp
@@ -34,25 +35,8 @@ class Signal (dict):
         if not inserted_at:
             inserted_at = date.strftime("%Y.%m.%d %H:%M:%S")
         self['inserted_at'] = inserted_at
-
-        precise = "%.5f"
-        if "BTC" in pair:
-            precise = "%.9f"
-        
-        if type(tp) is list:
-            self['mt4_rep'] = ("%s %s %s "+precise+" SL "+precise+" TP %s") % (
-                mt4_date, pair, sign, float(entry), float(sl), " ".join([str(precise % t) for t in tp])
-            )
-            self['unique_rep'] = ("%s %s "+precise+" SL "+precise+" TP %s") % (
-                pair, sign, float(entry), float(sl), " ".join([str(precise % t) for t in tp])
-            )
-        else:
-            self['mt4_rep'] = ("%s %s %s "+precise+" SL "+precise+" TP "+precise) % (
-                mt4_date, pair, sign, float(entry), float(sl), float(tp)
-            )
-            self['unique_rep'] = ("%s %s "+precise+" SL "+precise+" TP "+precise) % (
-                pair, sign, float(entry), float(sl), float(tp)
-            )
+        self['mt4_rep'] = self.mt4_rep()
+        self['unique_rep'] = self.unique_rep()
         self['hash'] = myhash(self['mt4_rep'])
         self['odds'] = self.odds()
         self['tp_pips'] = self.tp_pips()
@@ -61,15 +45,41 @@ class Signal (dict):
     def canonical(self):
         return self
 
-    def odds(self) -> float:
+    def mt4_rep(self):
+        precise = "%.5f"
+        if "BTC" in self['pair']:
+            precise = "%.9f"
+        mt4_date = self['date'].strftime("%Y.%m.%d %H:%M")
+    
+        if type(self['tp']) is list:
+            return ("%s %s %s "+precise+" SL "+precise+" TP %s") % (
+                mt4_date, self['pair'], self['sign'], float(self['entry']), float(self['sl']), " ".join([str(precise % t) for t in self['tp']])
+            )
+        else:
+            return ("%s %s %s "+precise+" SL "+precise+" TP "+precise) % (
+                mt4_date, self['pair'], self['sign'], float(self['entry']), float(self['sl']), float(self['tp'])
+            )
+
+    def unique_rep(self):
+        precise = "%.5f"
+        if "BTC" in self['pair']:
+            precise = "%.9f"
+        mt4_date = self['date'].strftime("%Y.%m.%d %H:%M")
+
+        if type(self['tp']) is list:
+            return ("%s %s "+precise+" SL "+precise+" TP %s") % (
+                self['pair'], self['sign'], float(self['entry']), float(self['sl']), " ".join([str(precise % t) for t in self['tp']])
+            )
+        else:
+            return ("%s %s "+precise+" SL "+precise+" TP "+precise) % (
+                self['pair'], self['sign'], float(self['entry']), float(self['sl']), float(self['tp'])
+            )
+
+    def odds(self):
 
         def payoff(tp,entry):
-            if type(self['tp']) is list:
-                payout_odds = [(float(target)-float(self['entry']))/(float(self['entry'])-float(self['sl'])) for target in self['tp']]
-                return [float("%.1f" % o) for o in payout_odds]
-            else:
-                payout_odds = (float(self['tp'])-float(self['entry']))/(float(self['entry'])-float(self['sl']))
-                return float("%.1f" % payout_odds)
+            payout_odds = (float(tp)-float(entry))/(float(entry)-float(self['sl']))
+            return float("%.1f" % payout_odds)
 
         if type(self['tp']) is list:
             return [payoff(tp, self['entry']) for tp in self['tp']]
@@ -79,10 +89,8 @@ class Signal (dict):
     def set_date(self, date):
         self['date'] = date
         mt4_date = date.strftime("%Y.%m.%d %H:%M")
-        self['mt4_rep'] = "%s %s %s %.5f SL %.5f TP %.5f" % (
-            mt4_date, self['pair'], self['sign'], float(self['entry']), float(self['sl']), float(self['tp'])
-        )
-
+        self['mt4_rep'] = self.mt4_rep()
+        
     def sl_pips(self) -> int:
         sl_pips = abs(float(self['entry'])-float(self['sl'])) * 100
         if ('XAU' in self['pair']):
@@ -93,7 +101,7 @@ class Signal (dict):
             sl_pips /= 100
         return round(sl_pips,1)
 
-    def tp_pips(self) -> int:
+    def tp_pips(self):
 
         def pipdist(target):
             tp_pips = abs(float(self['entry'])-float(target)) * 100
@@ -103,13 +111,13 @@ class Signal (dict):
                 tp_pips *= 100
             if any([p in self['pair'] for p in ['BTC','ZAR']]):
                 tp_pips /= 100
-            return tp_pips
+            return round(tp_pips,1)
         
         if type(self['tp']) is list:
-            tp_pips = [pipdist(t) for t in self['tp']]
+            return [pipdist(t) for t in self['tp']]
         else:
-            tp_pips = pipdist(self['tp'])
-            return round(tp_pips,1)
+            return pipdist(self['tp'])
+             
 
     def is_payout_safe(self, max_payout = 25.0, min_payout = 0.1, max_sl_pips = 500, min_sl_pips = 10.0) -> bool:
         if 'BTC' in self['pair']:
@@ -252,6 +260,9 @@ class SignalList(list):
 
             payoffs = [s['odds'] for s in self]
             ret_sig['odds'] = payoffs
+            ret_sig['mt4_rep'] = ret_sig.mt4_rep()
+            ret_sig['unique_rep'] = ret_sig.unique_rep()
+            ret_sig['hash'] = myhash(ret_sig['mt4_rep'])
             return ret_sig
         elif (buy_and_sell):
 
@@ -263,10 +274,9 @@ class SignalList(list):
                 if not r['sl'] in grouped_by_sl:
                     grouped_by_sl[r['sl']] = []
                 grouped_by_sl[r['sl']].append(r)
+            
             return [SignalList(g).canonical() for g in grouped_by_sl.values()]
-
         else:
-
             # case 3:
             # multiple pairs
 
@@ -277,11 +287,13 @@ class SignalList(list):
                     grouped_by_pair[r['pair']] = []
                 grouped_by_pair[r['pair']].append(r)
 
-
             canonicals = []
             for c in [SignalList(g).canonical() for g in grouped_by_pair.values()]:
                 if type(c) is Signal:
                     canonicals.append(c)
                 else:
                     canonicals.extend(c.canonical())
+            canonicals['mt4_rep'] = canonicals.mt4_rep()
+            canonicals['unique_rep'] = canonicals.unique_rep()
+            canonicals['hash'] = myhash(canonicals['mt4_rep'])
             return canonicals
