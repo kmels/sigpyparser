@@ -205,10 +205,17 @@ class Signal (dict):
         point_sym = ":point_up_2:" if self['sign'] is 'BUY' else ':point_down:'
         _str += point_sym + " " + str(self['entry']) + " " + self['sign']
 
-        _str += "\n:dart: " + str(self['tp'])
-        _str += "\n:x: " + str(self['sl'])
+        if type(self['tp']) is list:
+            for tp in self['tp']:
+                _str += "\n:dart: " + str(tp)
+            _str += "\n:x: " + str(self['sl'])
 
-        _str += "\n_RR:_ %.2f" % self.odds()
+            _str += "\n_RR:_ %s " % "," .join (["%.2f" % o for o in self.odds()])
+        else:
+            _str += "\n:dart: " + str(self['tp'])
+            _str += "\n:x: " + str(self['sl'])
+
+            _str += "\n_RR:_ %.2f" % self.odds()
         _str += "\n_ID:_  " + str(self['hash'])
         return _str
 
