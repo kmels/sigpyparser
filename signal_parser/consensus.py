@@ -36,6 +36,9 @@ class OutcomeConsensus(list):
             raise ValueError()
         self.cs = cs
 
+    def __str__(self):
+        return self.cs.__str__()
+
     def json(self):
         it = self.get_consensus()
         st = it[0]
