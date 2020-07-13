@@ -7,6 +7,10 @@ from signal_parser.parser import *
 
 today = datetime.now().replace(second=0).replace(microsecond=0)
 
+MISSING_SETUP = Noise("Could not find any valid setup.")
+
+UNSAFE_SL = lambda pips: Noise("Unsafe SL: %.1f pips" % pips)
+UNSAFE_ODDS = lambda odds: Noise("Unsafe payout: %.1f odds" % odds)
 def _parseSignal(t: str):
     return parseSignal(t,today,'p')
 
@@ -396,7 +400,7 @@ sl : 50 pip
 tp1 : 100 pip
 tp 2 : 180 pip
 
-@mql5signal""", None)
+@mql5signal""", MISSING_SETUP)
 
     def test_31(self):
         self._testParser("""Sell eur/jpy @ 132.950
@@ -447,7 +451,7 @@ We move the stop loss to 1248. This way we reduce our risk to 65 pips.""", Noise
     def test_38(self):
         self._testParser("""Eurusd Sell Now  1.07940
 Sl 1.08550
-Tp 0.0700""", None)
+Tp 0.0700""", UNSAFE_ODDS(168.2))
 
     def test_39(self):
         sig1 = Signal(144.11, 144.61, 143.61, today, "SELL", "p", "GBPJPY")
@@ -512,7 +516,7 @@ S.l
 Sell Gbpnzd at cmp 1.7610
 Tp1 1.7517
 Tp2 1.7419
-Sl 1 7786💴💴💴💴💴💵💵💵""", None)
+Sl 1 7786💴💴💴💴💴💵💵💵""", MISSING_SETUP)
 
     def test_46(self):
         sig1 = Signal(1.7610, 1.7786, 1.7517, today, "SELL", "p", "GBPNZD")
@@ -618,12 +622,12 @@ S.L: @1.2770/$ (30 pip)""", Signal(1.2735, 1.277, 1.267, today,"SELL","p","GBPUS
 👉 TP SET 110 (300 PIP)
 👉SL SET~~~~~~~~
 
-🌹FOREX MINISTER 🌹""", None)
+🌹FOREX MINISTER 🌹""", MISSING_SETUP)
 
     def test_59(self):
         self._testParser("""
         USDJPY::\nbullish but is possible to retest 105.70-85 targeting 108.00-111.10 , you can buy it from this area with sL 50 pips or ( if a daily candle close under this zone)
-        """, None)
+        """, MISSING_SETUP)
 
     def test_60(self):
         self._testParser("""long term signal AUDCHF sell now 0.7525
@@ -637,7 +641,7 @@ EURUSD bearish fib idea - daily timeframe
 Sell limit: [Enter when market opens]
 Stop: 1.17787
 Target 1: 1.14553 [Risk to reward ratio 2.18]
-Target 2: 1.12987 [Risk to reward ratio 3.72]""", None)
+Target 2: 1.12987 [Risk to reward ratio 3.72]""", MISSING_SETUP)
 
     def test_62(self):
         self._testParser("""🌹FOREX MINISTER 🌹
@@ -664,7 +668,7 @@ Target 2: 1.12987 [Risk to reward ratio 3.72]""", None)
 👉 TP SET 1.50000(500 pip)
 👉SL SET~~~~~~~~
 
-🌹FOREX MINISTER 🌹""", None)
+🌹FOREX MINISTER 🌹""", MISSING_SETUP)
 
     #def test_63(self):
     #    self._testParser("""BUY BTCUSD 7000 TP 8000 SL 6800""", Signal(7000,8000,6800,today,"BUY","p","BTCUSD"))
@@ -802,7 +806,7 @@ Buy Usd/Jpy @ 113.18
 Tp - 114.02 & 114.85
 Sl - ???
 
-Support around 113.10""", None)
+Support around 113.10""", UNSAFE_SL(8))
 
     def _untested_79(self):
         self._testParser("""*Tycoon Capital Trading And Investment Club*
@@ -850,7 +854,7 @@ TP @ 133.825(60 PIP)""", Signal(133.225, 133.0, 133.825, today,"BUY","p","EURJPY
 :small_orange_diamond:stop loss @ 112.24
 :large_blue_diamond: take profit@ 111.80
 lot size: 0.01 at 500 usd
-SIGNAL NO:27""", None) # take profit is above sell
+SIGNAL NO:27""", MISSING_SETUP) # take profit is above sell (111.80 > 111.76)
 
     def test_85(self):
         self._testParser("""Signal no.5
@@ -996,7 +1000,7 @@ TAKE PROFIT 0.70000""", Signal(0.647, 0.64, 0.7, today, "BUY", "p", "NZDUSD"))
 🌷🎓Waves ScoUt Forex🎓🌷
 At :73.94
 SL :73.76**Risk**15Pip
-        TP :76.01**Reward**205pip🎯""", None) # "Unsafe SL: 1800.0 pips"
+        TP :76.01**Reward**205pip🎯""", UNSAFE_SL(1800)) # "Unsafe SL: 1800.0 pips" (tested below with decimal point corrected)
 
         self._testParser("""📠 Signal Number :16
 
@@ -1073,7 +1077,7 @@ All Copyrights© Reserved""", Signal(1280, 1290, 1270, today, "SELL", "p", "XAUU
     def test_112(self):
         self._testParser("""Eur/aud @ Sell Now 1.63260
 Take Profit: 20-50-100 Pips
-Stop Loss:- 45Pips""", None);
+Stop Loss:- 45Pips""", MISSING_SETUP) #  -- Should pass when absolute pips is supported
 
     def test_113(self):
         sig1 = Signal(1.7025, 1.7085, 1.6990, today, "SELL", "p", "GBPCAD")
@@ -1147,7 +1151,7 @@ All Copyrights Reserved®""", Noise("Missing pair")) #Signal(1293, 1296, 1285, t
 
 2% Risk Per Trade 👨🏻‍💻
 OMID AFGHAN FOREX
-All CopyRight © Reserved""", None)
+All CopyRight © Reserved""", MISSING_SETUP)
 
     def test_121(self):
         self._testParser("""SELL USDJPY 109.44
@@ -1205,6 +1209,17 @@ BOUGHT @ 0.9015
 ⏰TIME: 1 TO 3 DAYS
 📊R-R: 1-2.1
 📍RECOMMENDED RISK: 1.00%""", canonical_sig)
+
+    def test_125(self):
+        self._testCanonicalParser("""USDMXN BUY @ 22.24000
+
+SL @ 22.12000
+
+TP1 @ 22.36000
+
+TP2 @ 22.48000
+
+TP3 @ 22.60000""", Signal(22.24, 22.12, [22.36, 22.48, 22.60], today, "BUY", "p", "USDMXN"))
 
     def test_212(self):
         self._testParser("""Gbpjpy sell now 142.000
@@ -1301,7 +1316,7 @@ Tp,@15.900"""
 🔹TP 112.000
 🔺SL 114.310
 ©Copyright Reserved"""
-        self._testParser(text, None)
+        self._testParser(text, MISSING_SETUP)
 
     def test_218(self):
         text = """SELL 0.6433 nzdusd tp 0.6265 SL 0.6530"""
