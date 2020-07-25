@@ -51,7 +51,7 @@ class TestOutcome(unittest.TestCase):
         self.assertEqual(ccs.get_consensus(), ("C","tp_hit"))
 
     def test_4(self):
-        resultset = {b'{"hash": 174843262703169,"granularity": "15","event": "open","calificador": "International Capital Markets Pty Ltd.","account_number": 624532,"pair": "EURCAD","state": "O","opened_on": {"ts": 1594267200,"mt4": "2020.07.09 04:00"},"invalidated_on": {"ts": -7200,"mt4": ""},"published_on": {"ts": 1594267260,"mt4": "2020.07.09 04:01"},"last_checked": {"ts": 1594416600,"mt4": "2020.07.10 21:30"},"last_available": {"ts": 1594417500,"mt4": "2020.07.10 21:45"},"spot_price": "1.53613000","signal": {"entry": 1.53400,"sl": 1.54000,"tp": 1.52700,"date": "2020.07.09 04:01","sign": "SELL","pair": "EURCAD","hash": 174843262703169,"tp_pips": 70.0,"sl_pips": 60.0}}'}
+        resultset = {'{"hash": 174843262703169,"granularity": "15","event": "open","calificador": "International Capital Markets Pty Ltd.","account_number": 624532,"pair": "EURCAD","state": "O","opened_on": {"ts": 1594267200,"mt4": "2020.07.09 04:00"},"invalidated_on": {"ts": -7200,"mt4": ""},"published_on": {"ts": 1594267260,"mt4": "2020.07.09 04:01"},"last_checked": {"ts": 1594416600,"mt4": "2020.07.10 21:30"},"last_available": {"ts": 1594417500,"mt4": "2020.07.10 21:45"},"spot_price": "1.53613000","signal": {"entry": 1.53400,"sl": 1.54000,"tp": 1.52700,"date": "2020.07.09 04:01","sign": "SELL","pair": "EURCAD","hash": 174843262703169,"tp_pips": 70.0,"sl_pips": 60.0}}'}
         outcome = [json.loads(c) for c in resultset]
         self.assertEqual(len(outcome),1)
         cs = OutcomeConsensus(outcome)
