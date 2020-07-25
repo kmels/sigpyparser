@@ -2,6 +2,8 @@
 
 [![build status](http://img.shields.io/travis/kmels/sigpyparser/master.svg?style=flat)](https://travis-ci.org/kmels/sigpyparser)
 
+[![codecov](https://codecov.io/gh/kmels/SigPyParser/branch/master/graph/badge.svg)](https://codecov.io/gh/kmels/SigPyParser)
+
 This is a simple library to extract market signals from providers. A signal
 consists of:
   * Pair
