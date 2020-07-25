@@ -1220,6 +1220,23 @@ TP1 @ 22.36000
 TP2 @ 22.48000
 
 TP3 @ 22.60000""", Signal(22.24, 22.12, [22.36, 22.48, 22.60], today, "BUY", "p", "USDMXN"))
+    
+    def test_126(self):
+        txt = """SELL EURUSD 1.1274 
+SL 1.1370
+TP 1.1156
+TP 1.0946
+TP 1.0750"""
+
+        self._testCanonicalParser(txt, Signal(1.1274, 1.1370, [1.1156, 1.0946, 1.0750], today, "SELL", "p", "EURUSD"))
+
+    def test_127(self):
+        s = _parseSignal("SELL EURUSD 1.1370 SL 1.1370 TP 1.1156")
+        self.assertTrue(type(s) is Noise)
+
+        import pytest
+        with pytest.raises(Exception):
+            s2 = Signal(1.1370, 1.1370, [1.1156], today, "SELL", "p", "EURUSD")
 
     def test_212(self):
         self._testParser("""Gbpjpy sell now 142.000

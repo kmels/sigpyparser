@@ -53,6 +53,14 @@ python3 -m unittest tests.crypto_tests.TestCryptoParser # run all crypto parser 
 python3 -m unittest tests.fx_test.TestFXParser.test_215
 ```
 
+Test coverage
+----
+
+```
+pip3 install pytest pytest-cov
+pytest --cov=./
+```
+
 Roadmap
 ----
 * Support multiple signals with multiple targets per text: pass test_115 in fx_test.py

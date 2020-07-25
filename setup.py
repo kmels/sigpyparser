@@ -7,7 +7,7 @@ setuptools.setup(
     name="sigpyparser",
     version="0.0.1",
     author="Carlos Eduardo López Camey",
-    author_email="carlos@lopezcamey.com",
+    author_email="carlos@kmels.net",
     description="Extract market signals from text",
     long_description=long_description,
     long_description_content_type="text/markdown",

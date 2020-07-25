@@ -19,7 +19,8 @@ flags_sym_ = lambda c: flags_[c] if c in flags else ""
 class Signal (dict):
     def __init__(self, entry : float, sl : float, tp : float, date : datetime, sign : str, username : str, pair : str,
                     inserted_at : datetime = None, outcomes : list = []):
-
+        if abs(entry - sl) == 0:
+            raise Exception("Unexpected - 0 SL pips")
         self['entry'] = entry
         self['sl'] = sl
         self['tp'] = tp
@@ -76,7 +77,6 @@ class Signal (dict):
             )
 
     def odds(self):
-
         def payoff(tp,entry):
             payout_odds = (float(tp)-float(entry))/(float(entry)-float(self['sl']))
             return float("%.1f" % payout_odds)
