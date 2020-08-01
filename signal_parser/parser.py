@@ -64,7 +64,7 @@ def find_setups(_prices, _tokens, text, pair, _type, d: datetime, p: ""):
     def mkSafeSetup(s: dict):
         if not type(s) is dict:
             if type(s) is list:
-                return Noise("Could not find any valid setup.")
+                return Noise("Could not find any valid setup.", s)
             return s
         s['date'] = d
         s['sign'] = _type
@@ -279,7 +279,7 @@ def isPrice(t: str) -> bool:
     except ValueError:
         return False
 
-def getPriceFollowing(tokens : list, prevtoken : str, likely_prices : list, fallback_index : int = 0) -> float:
+def getPriceFollowing(tokens : list, prevtoken : str, likely_prices : list, fallback_index : int = 0, exclude=[]) -> float:
 
     if isPrice(prevtoken):
         replacements = [(t,float(t)) for t in tokens if isPrice(t) and str(float(t)) != t]
@@ -296,10 +296,10 @@ def getPriceFollowing(tokens : list, prevtoken : str, likely_prices : list, fall
         i = fallback_index
     if i < len(tokens):
         if len(likely_prices) == 0:
-            nextPrices = [float(t) for t in tokens[i+1:] if isPrice(t)]
+            nextPrices = [float(t) for t in tokens[i+1:] if isPrice(t) and not float(t) in exclude]
         else:
-            nextPrices = [float(t) for t in tokens[i+1:] if isPrice(t) and float(t) in likely_prices]
-        ret = nextPrices[0] if len(nextPrices) > 0 else 0.0
+            nextPrices = [float(t) for t in tokens[i+1:] if isPrice(t) and float(t) in likely_prices and not float(t) in exclude]
+        ret = nextPrices[0] if len(nextPrices) > 0 and not nextPrices[0] in exclude else 0.0
         return ret
     return 0.0
 
@@ -315,11 +315,11 @@ def purifySetup(s : dict) -> dict:
 
 def getValidSetup(_type : str, pair: str, tokens: list, likely_prices: list, div : int = 1, d: datetime = None) -> dict:
     _prices = [t for t in tokens if isPrice(t)]
-    entry = getPriceFollowing(tokens, pair, likely_prices)
     # Only one stop loss enabled
     sl = getPriceFollowing(tokens, "SL", likely_prices)
     # At least one TP
     tp = getPriceFollowing(tokens, "TP", likely_prices)
+    entry = getPriceFollowing(tokens, pair, likely_prices, exclude=[sl, tp])
     
     if not "BTC" in pair:
         precision = 5
@@ -339,8 +339,8 @@ def getValidSetup(_type : str, pair: str, tokens: list, likely_prices: list, div
             return s
     if "ENTRY" in tokens:
         entry = getPriceFollowing(tokens, "ENTRY", likely_prices)
-        tp = getPriceFollowing(tokens, "TP", likely_prices)
-        sl = getPriceFollowing(tokens, "SL", likely_prices)
+        tp = getPriceFollowing(tokens, "TP", likely_prices, exclude=[entry])
+        sl = getPriceFollowing(tokens, "SL", likely_prices, exclude=[entry, tp])
 
         if div > 1:
             tp = round(tp/div, precision)
@@ -353,9 +353,7 @@ def getValidSetup(_type : str, pair: str, tokens: list, likely_prices: list, div
             return s
 
     if len(likely_prices) == 3 and not ('SL' in tokens and 'TP' in tokens):
-        entry = likely_prices[0]
-        sl = likely_prices[1]
-        tp = likely_prices[2]
+        (entry, sl, tp) = likely_prices
         if valid_setup(_type, entry, sl, tp):
             return { 'entry': entry, 'sl': sl, 'tp': tp }
 

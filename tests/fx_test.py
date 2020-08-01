@@ -641,7 +641,7 @@ EURUSD bearish fib idea - daily timeframe
 Sell limit: [Enter when market opens]
 Stop: 1.17787
 Target 1: 1.14553 [Risk to reward ratio 2.18]
-Target 2: 1.12987 [Risk to reward ratio 3.72]""", MISSING_SETUP)
+Target 2: 1.12987 [Risk to reward ratio 3.72]""", UNSAFE_SL(10021.3))
 
     def test_62(self):
         self._testParser("""🌹FOREX MINISTER 🌹
@@ -1256,7 +1256,7 @@ LIMIT ENTRY: 105.108"""
         parsed = _parseSignal(txt1)
         self._testParser(txt1, Signal(0.68425, 0.68629, 0.6776, today, "SELL", "p", "CADCHF"))
         #self._testParser(txt2, Signal(1.73228, 1.72982, 1.73770, today, "SELL", "p", "GBPCAD"))
-        #self._testParser(txt3, Signal(105.322, 105.108, 104.206, today, "SELL", "p", "USDJPY"))
+        self._testParser(txt3, Signal(105.108, 105.322, 104.206, today, "SELL", "p", "USDJPY"))
         
     def test_212(self):
         self._testParser("""Gbpjpy sell now 142.000
