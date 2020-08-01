@@ -425,6 +425,7 @@ def normalizeText(t: str) -> str:
     t = re.sub("BUY LIMIT","BUY",t)
     t = re.sub("LONG","BUY",t)
     t = re.sub("(SELL|BUY) TERM","",t)
+    t = re.sub("ENTER", " ENTRY ", t)
     t = t.replace('💯'," ")
     t = t.replace('#'," ")
     #t = t.replace('$'," ")

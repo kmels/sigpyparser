@@ -1238,6 +1238,26 @@ TP 1.0750"""
         with pytest.raises(Exception):
             s2 = Signal(1.1370, 1.1370, [1.1156], today, "SELL", "p", "EURUSD")
 
+    def test_128(self):
+        txt1 = """CADCHF SELL 2H Chart
+SL:  0.68629
+TP:  0.67760
+PRICE WE ENTERED AT: 0.68425"""
+        txt2 = """GBPCAD 15m Chart
+SL:  1.72982
+TP:  1.73770
+PRICE WE ENTERED AT: 1.73228"""
+        txt3 = """LIMIT ENTRY
+USDJPY SELL 1H Chart
+SL:  105.322
+TP:  104.206
+LIMIT ENTRY: 105.108"""
+
+        parsed = _parseSignal(txt1)
+        self._testParser(txt1, Signal(0.68425, 0.68629, 0.6776, today, "SELL", "p", "CADCHF"))
+        #self._testParser(txt2, Signal(1.73228, 1.72982, 1.73770, today, "SELL", "p", "GBPCAD"))
+        #self._testParser(txt3, Signal(105.322, 105.108, 104.206, today, "SELL", "p", "USDJPY"))
+        
     def test_212(self):
         self._testParser("""Gbpjpy sell now 142.000
 Sl 143.000
