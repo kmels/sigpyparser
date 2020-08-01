@@ -1255,7 +1255,7 @@ LIMIT ENTRY: 105.108"""
 
         parsed = _parseSignal(txt1)
         self._testParser(txt1, Signal(0.68425, 0.68629, 0.6776, today, "SELL", "p", "CADCHF"))
-        #self._testParser(txt2, Signal(1.73228, 1.72982, 1.73770, today, "SELL", "p", "GBPCAD"))
+        self._testParser(txt2, Signal(1.73228, 1.72982, 1.73770, today, "BUY", "p", "GBPCAD"))
         self._testParser(txt3, Signal(105.108, 105.322, 104.206, today, "SELL", "p", "USDJPY"))
         
     def test_212(self):

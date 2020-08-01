@@ -181,6 +181,12 @@ def parseSignal(t: str, d: datetime = None, p: str = ""):
     hasType = isBuy or isSell
 
     if not hasType:
+        sell = parseSignal("SELL " + t, d, p)
+        if sell:
+            return sell
+        buy = parseSignal("BUY " + t, d, p)
+        if buy:
+            return buy
         return Noise("Missing type")
 
     pair = getValidPair(text)
