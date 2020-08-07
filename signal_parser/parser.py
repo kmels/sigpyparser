@@ -38,9 +38,9 @@ def is_likely_price(price, _prices, pair):
     
 def find_setups(_prices, _tokens, text, pair, _type, d: datetime, p: ""):
     likely_prices = [p for p in _prices if is_likely_price(p, _prices, pair)]
-    
-    #  -- Si no tiene 3 precios, verificar si tiene SL y TP
-    if len(likely_prices) < 3:
+
+    #  -- Require TP and SL only if text does not have exactly 3 numbers that make a setup
+    if len(likely_prices) != 3:
         if not 'TP' in _tokens:
             return Noise("Missing TP")
         if not 'SL' in _tokens:
@@ -462,8 +462,9 @@ def normalizeText(t: str) -> str:
     t = re.sub("(\\.\\.)+"," ",t)
     t = re.sub("T\\.P"," TP ",t)
     t = re.sub("S\\.L"," SL ",t)
-    
-    
+    t = re.sub("TP\\."," TP ",t)
+    t = re.sub("SL\\."," SL ",t)
+
     t = re.sub("STOP LOSS"," SL ",t)
     t = re.sub("STOP"," SL ",t)
     if not 'SL' in t:
