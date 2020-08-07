@@ -7,14 +7,27 @@ from .noise import *
 
 from . import *
 
-valid_buy = lambda t,entry,sl,tp: t is "BUY" and entry > sl and tp > entry
-valid_sell = lambda t,entry,sl,tp: t is "SELL" and entry < sl and tp < entry
+valid_buy = lambda t, entry, sl, tp: t is "BUY" and entry > sl and tp > entry
+valid_sell = lambda t, entry, sl, tp: t is "SELL" and entry < sl and tp < entry
 
-currencies = ['AUD','CAD','CHF','EUR','GBP','JPY','NZD','USD','XAU','WTI','BTC','ZAR','MXN']
+currencies = ['AUD', 'CAD', 'CHF', 'EUR', 'GBP', 'JPY', 'NZD', 'USD', 'XAU', 'WTI', 'BTC', 'ZAR', 'MXN']
 pairs = [a+b for a in currencies[:-3] for b in currencies[:-3] if a is not b]
-pairs.extend(['WTIUSD','XAUUSD'])
+pairs.extend(['WTIUSD', 'XAUUSD'])
 
-binance_cryptos = ['BNB','BTC','NEO','ETH','LTC','QTUM','EOS','SNT','BNT','GAS','BCH','BTM','USDT','HCC','HSR','OAX','DNT','MCO','ICN','ZRX','OMG','WTC','LRC','LLT','YOYO','TRX','STRAT','SNGLS','BQX','KNC','SNM','FUN','LINK','XVG','CTR','SALT','MDA','IOTA','SUB','IOT','ETC','MTL','MTH','ENG','AST','DASH','BTG','EVX','REQ','VIB','POWR','ARK','XRP','MOD','ENJ','STORJ','VEN','KMD','RCN','NULS','RDN','XMR','DLT','AMB','BAT','ZEC','BCPT','ARN','GVT','CDT','GXS','POE','QSP','BTS','XZC','LSK','TNT','FUEL','MANA','BCD','DGD','ADX','ADA','PPT','CMT','XLM','CND','LEND','WABI','SBTC','BCX','WAVES','TNB','GTO','ICX','OST','ELF','AION','ETF','BRD','NEBL','VIBE','LUN','CHAT','RLC','INS','IOST','STEEM','NANO','AE','VIA','BLZ','SYS','RPX','NCASH','POA','ONT','ZIL','STORM','XEM','WAN','WPR','QLC','GRS','EDO','WINGS','NAV','TRIG','APPC','PIVX','MFT','PHB','FET']
+binance_cryptos = ['BNB', 'BTC', 'NEO', 'ETH', 'LTC', 'QTUM', 'EOS', 'SNT', 'BNT', 'GAS',
+                   'BCH', 'BTM', 'USDT', 'HCC', 'HSR', 'OAX', 'DNT', 'MCO', 'ICN', 'ZRX',
+                   'OMG', 'WTC', 'LRC', 'LLT', 'YOYO', 'TRX', 'STRAT', 'SNGLS', 'BQX',
+                   'KNC', 'SNM', 'FUN', 'LINK', 'XVG', 'CTR', 'SALT', 'MDA', 'IOTA',
+                   'SUB', 'IOT', 'ETC', 'MTL', 'MTH', 'ENG', 'AST', 'DASH', 'BTG', 'EVX',
+                   'REQ', 'VIB', 'POWR', 'ARK', 'XRP', 'MOD', 'ENJ', 'STORJ', 'VEN', 'KMD',
+                   'RCN', 'NULS', 'RDN', 'XMR', 'DLT', 'AMB', 'BAT', 'ZEC', 'BCPT', 'ARN',
+                   'GVT', 'CDT', 'GXS', 'POE', 'QSP', 'BTS', 'XZC', 'LSK', 'TNT', 'FUEL',
+                   'MANA', 'BCD', 'DGD', 'ADX', 'ADA', 'PPT', 'CMT', 'XLM', 'CND', 'LEND',
+                   'WABI', 'SBTC', 'BCX', 'WAVES', 'TNB', 'GTO', 'ICX', 'OST', 'ELF',
+                   'AION', 'ETF', 'BRD', 'NEBL', 'VIBE', 'LUN', 'CHAT', 'RLC', 'INS',
+                   'IOST', 'STEEM', 'NANO', 'AE', 'VIA', 'BLZ', 'SYS', 'RPX', 'NCASH',
+                   'POA', 'ONT', 'ZIL', 'STORM', 'XEM', 'WAN', 'WPR', 'QLC', 'GRS',
+                   'EDO', 'WINGS', 'NAV', 'TRIG', 'APPC', 'PIVX', 'MFT', 'PHB', 'FET']
 
 cryptocurrencies = []
 cryptocurrencies.extend(binance_cryptos)
@@ -38,6 +51,8 @@ def is_likely_price(price, _prices, pair):
     
 def find_setups(_prices, _tokens, text, pair, _type, d: datetime, p: ""):
     likely_prices = [p for p in _prices if is_likely_price(p, _prices, pair)]
+    print(_tokens)
+    print(likely_prices)
 
     #  -- Require TP and SL only if text does not have exactly 3 numbers that make a setup
     if len(likely_prices) != 3:
