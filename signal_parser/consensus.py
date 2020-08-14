@@ -67,10 +67,13 @@ class OutcomeConsensus(list):
                 "state": it[0],
             }
 
-    def get_consensus(self):
+    def get_consensus(self, try_weak = True):
         if not self.has_consensus():
-            raise Exception("Does not have consensus")
-
+            if not try_weak:
+                raise Exception("Does not have consensus or weak consensus")
+            else:
+                return self.get_weak_consensus()
+                
         state = [s['state'] for s in self.cs]
         event = [s['event'] for s in self.cs]
         if cardinality(state) == 1 and cardinality(event) == 1:

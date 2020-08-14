@@ -70,3 +70,4 @@ class TestConsensus(unittest.TestCase):
         self.assertTrue(test.has_weak_consensus())
         self.assertEqual(test.get_weak_consensus('C'), ('C','tp_hit'))
         self.assertEqual(test.get_weak_consensus(), ('C', 'tp_hit'))
+        self.assertEqual(test.get_consensus(), ("C","tp_hit"))
