@@ -4,12 +4,20 @@ from datetime import datetime
 
 cardinality = lambda xs: len(set(xs))
 
+#  -- Consensus by majority (more than half)
 def has_consensus(_vs):
     vs = cardinality(_vs)
     _freq = lambda ys, y: len([yi for yi in ys if yi == y])
     _freqs = [(_freq(_vs, v)) for v in _vs]
     return vs == 1 or (vs > 1 and vs < len(_vs) and cardinality(_freqs) != 1)
 
+#  -- Consensus by tie (same event cardinality)
+def has_weak_consensus(_vs):
+    vs = cardinality(_vs)
+    _freq = lambda ys, y: len([yi for yi in ys if yi == y])
+    _freqs = [(_freq(_vs, v)) for v in _vs]
+    return cardinality(_freqs) == 1
+    
 class Outcome(dict):
     def __init__(self, hash, signer, pair, published_on, opened_on, invalidated_on,
                     last_checked, last_available, event, state):
@@ -33,7 +41,7 @@ class Outcome(dict):
 class OutcomeConsensus(list):
     def __init__(self, cs=[]):
         if type(cs) is not list:
-            raise ValueError()
+            raise ValueError("Expecting parameter to be of type: list")
         self.cs = cs
 
     def __str__(self):
@@ -61,7 +69,8 @@ class OutcomeConsensus(list):
 
     def get_consensus(self):
         if not self.has_consensus():
-            raise EOFError
+            raise Exception("Does not have consensus")
+
         state = [s['state'] for s in self.cs]
         event = [s['event'] for s in self.cs]
         if cardinality(state) == 1 and cardinality(event) == 1:
@@ -75,5 +84,28 @@ class OutcomeConsensus(list):
             ev = sorted(ev, key=lambda k: k[1])
             return (st[-1][0], ev[-1][0])
 
+
+    def get_weak_consensus(self, st = None, ev = None):
+        if not self.has_weak_consensus():
+            raise Exception("Does not have weak consensus")
+        
+        if ev != None and st != None:
+            is_intended = lambda s: s['state'] == st and s['event'] == ev
+        elif ev != None:
+            is_intended = lambda s: s['event'] == ev
+        elif st != None:
+            is_intended = lambda s: s['state'] == st
+        elif st == None and ev == None:
+            is_intended = lambda s: s['state'] != 'P'
+
+        stev_elems = [{'state': s['state'], 'event': s['event']} for s in self.cs if is_intended(s)]
+
+        weak_view = OutcomeConsensus(stev_elems)
+        ret = weak_view.get_consensus()
+        return ret
+
     def has_consensus(self):
         return has_consensus([s['state'] for s in self.cs]) and has_consensus([s['event'] for s in self.cs])
+
+    def has_weak_consensus(self):
+        return has_weak_consensus([s['state'] for s in self.cs]) and has_weak_consensus([s['event'] for s in self.cs])

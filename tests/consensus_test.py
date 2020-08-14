@@ -4,7 +4,7 @@ from signal_parser.consensus import *
 today = datetime.now()
 import json
 
-class TestOutcome(unittest.TestCase):
+class TestConsensus(unittest.TestCase):
 
     def test_1(self):
         c = Outcome.from_dict({"hash":149490766844,"signer":"SimpleFX Ltd.","pair":"EURUSD","published_on":{"ts":1490554500,"mt4":"2017.03.26 18:55"},"opened_on":{"ts":1490553900,"mt4":"2017.03.26 18:45"},"invalidated_on":{"ts":1490595300,"mt4":"2017.03.27 06:15"},"last_checked":{"ts":1490595300,"mt4":"2017.03.27 06:15"},"last_available":{"ts":1515968100,"mt4":"2018.01.14 22:15"},"event":"tp_hit","state":"C"})
@@ -57,3 +57,16 @@ class TestOutcome(unittest.TestCase):
         cs = OutcomeConsensus(outcome)
         self.assertEqual(cs.has_consensus(), True)
         self.assertEqual(cs.get_consensus(), ("O","open"))
+
+    def test_5(self):
+        test = OutcomeConsensus([
+            {'state': "C", 'event': "tp_hit"},
+            {'state': "P", 'event': "pending"},
+            {'state': "C", 'event': "tp_hit"},
+            {'state': "P", 'event': "pending"}
+        ])
+
+        self.assertFalse(test.has_consensus())
+        self.assertTrue(test.has_weak_consensus())
+        self.assertEqual(test.get_weak_consensus('C'), ('C','tp_hit'))
+        self.assertEqual(test.get_weak_consensus(), ('C', 'tp_hit'))
