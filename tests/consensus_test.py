@@ -3,6 +3,7 @@ from datetime import datetime
 from signal_parser.consensus import *
 today = datetime.now()
 import json
+import pytest
 
 class TestConsensus(unittest.TestCase):
 
@@ -71,3 +72,18 @@ class TestConsensus(unittest.TestCase):
         self.assertEqual(test.get_weak_consensus('C'), ('C','tp_hit'))
         self.assertEqual(test.get_weak_consensus(), ('C', 'tp_hit'))
         self.assertEqual(test.get_consensus(), ("C","tp_hit"))
+
+    def test_6(self):
+        test = OutcomeConsensus([
+            {'state': "O", 'event': "open"},
+            {'state': "P", 'event': "pending"},
+            {'state': "O", 'event': "open"},
+            {'state': "P", 'event': "pending"}
+        ])
+
+        self.assertFalse(test.has_consensus())
+        self.assertTrue(test.has_weak_consensus())
+        pytest.raises(Exception, test.get_weak_consensus, 'C')
+        self.assertEqual(test.get_weak_consensus(), ('O', 'open'))
+        self.assertEqual(test.get_consensus(), ("O","open"))
+

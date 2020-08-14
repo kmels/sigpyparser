@@ -94,9 +94,9 @@ class OutcomeConsensus(list):
         
         if ev != None and st != None:
             is_intended = lambda s: s['state'] == st and s['event'] == ev
-        elif ev != None:
+        elif ev != None and st == None:
             is_intended = lambda s: s['event'] == ev
-        elif st != None:
+        elif st != None and ev == None:
             is_intended = lambda s: s['state'] == st
         elif st == None and ev == None:
             is_intended = lambda s: s['state'] != 'P'
