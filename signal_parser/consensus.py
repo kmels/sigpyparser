@@ -6,17 +6,27 @@ cardinality = lambda xs: len(set(xs))
 
 #  -- Consensus by majority (more than half)
 def has_consensus(_vs):
-    vs = cardinality(_vs)
+    if len(_vs) == 0:
+        return False
+    size = cardinality(_vs)
+    if size == 1:
+        return True
     _freq = lambda ys, y: len([yi for yi in ys if yi == y])
-    _freqs = [(_freq(_vs, v)) for v in _vs]
-    return vs == 1 or (vs > 1 and vs < len(_vs) and cardinality(_freqs) != 1)
+    _freqs = dict([(_freq(_vs, v),v) for v in _vs])
+
+    #   -- only 1 frequency means a tie
+    if cardinality(_freqs) == 1:
+        return False
+
+    #  -- consensus when there is a majority 
+    return len(_freqs) == size
 
 #  -- Consensus by tie (same event cardinality)
 def has_weak_consensus(_vs):
     vs = cardinality(_vs)
     _freq = lambda ys, y: len([yi for yi in ys if yi == y])
     _freqs = [(_freq(_vs, v)) for v in _vs]
-    return cardinality(_freqs) == 1
+    return cardinality(_freqs) == 1 and min(_freqs) > 1
     
 class Outcome(dict):
     def __init__(self, hash, signer, pair, published_on, opened_on, invalidated_on,
@@ -81,12 +91,17 @@ class OutcomeConsensus(list):
         else:
             #find the most frequent
             _freq = lambda ys, y: len([yi for yi in ys if yi == y])
-            st = [(st, _freq(state, st)) for st in state]
-            st = sorted(st, key=lambda k: k[1])
+
             ev = [(ev, _freq(event, ev)) for ev in event]
             ev = sorted(ev, key=lambda k: k[1])
-            return (st[-1][0], ev[-1][0])
 
+            consensus_ev = ev[-1][0]
+
+            state = [s['state'] for s in self.cs if s['event'] == consensus_ev]
+            st = [(st, _freq(state, st)) for st in state]
+            st = sorted(st, key=lambda k: k[1])
+
+            return (st[-1][0], consensus_ev)
 
     def get_weak_consensus(self, st = None, ev = None):
         if not self.has_weak_consensus():
@@ -108,7 +123,11 @@ class OutcomeConsensus(list):
         return ret
 
     def has_consensus(self):
-        return has_consensus([s['state'] for s in self.cs]) and has_consensus([s['event'] for s in self.cs])
+        #sts = [s['state'] for s in self.cs]
+        evs = [s['event'] for s in self.cs]
+        return has_consensus(evs)
 
     def has_weak_consensus(self):
-        return has_weak_consensus([s['state'] for s in self.cs]) and has_weak_consensus([s['event'] for s in self.cs])
+        sts = [s['state'] for s in self.cs]
+        evs = [s['event'] for s in self.cs]
+        return has_weak_consensus(sts) and has_weak_consensus(evs) and cardinality(sts) == cardinality(evs)
