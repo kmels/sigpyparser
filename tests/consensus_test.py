@@ -181,4 +181,40 @@ class TestConsensus(unittest.TestCase):
 
         self.assertFalse(test.has_consensus())
         self.assertTrue(test.has_weak_consensus())
+        self.assertEqual(test.get_consensus(), ("O","open"))
+
+        test = OutcomeConsensus([
+            {'state': "O", 'event': "open"},
+            {'state': "O", 'event': "open"},
+            {'state': "C", 'event': "sl_hit"},
+            {'state': "C", 'event': "sl_hit"},
+            {'state': "C", 'event': "sl_hit"}
+        ])
+
+        self.assertTrue(test.has_consensus())
+        self.assertFalse(test.has_weak_consensus())
+        self.assertEqual(test.get_consensus(), ("C","sl_hit"))
+
+    def test_9(self):
+        test = OutcomeConsensus([
+            {'state': "P", 'event': "pending"},
+            {'state': "O", 'event': "open"},
+            {'state': "O", 'event': "open"},
+            {'state': "P", 'event': "pending"},
+            {'state': "C", 'event': "tp_hit"}
+        ])
+        self.assertFalse(test.has_consensus())
+        self.assertFalse(test.has_weak_consensus())
         pytest.raises(Exception, test.get_consensus)
+
+        test = OutcomeConsensus([
+            {'state': "P", 'event': "pending"},
+            {'state': "O", 'event': "open"},
+            {'state': "O", 'event': "open"},
+            {'state': "P", 'event': "pending"},
+            {'state': "C", 'event': "tp_hit"},
+            {'state': "C", 'event': "tp_hit"}
+        ])
+        self.assertFalse(test.has_consensus())
+        self.assertTrue(test.has_weak_consensus())
+        self.assertEqual(test.get_consensus(), ("O","open"))

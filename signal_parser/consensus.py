@@ -83,8 +83,16 @@ class OutcomeConsensus(list):
             if not try_weak:
                 raise Exception("Does not have consensus or weak consensus")
             else:
-                return self.get_weak_consensus()
-                
+                #  -- Try without Pending
+                try:
+                    return self.get_weak_consensus()
+                except:
+                    #  -- Try open over close
+                    try:
+                        return self.get_weak_consensus(ev = 'open')
+                    except:
+                        return self.get_weak_consensus(st = 'C')
+
         state = [s['state'] for s in self.cs]
         event = [s['event'] for s in self.cs]
         if cardinality(state) == 1 and cardinality(event) == 1:
