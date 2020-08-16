@@ -119,7 +119,7 @@ class OutcomeConsensus(list):
         stev_elems = [{'state': s['state'], 'event': s['event']} for s in self.cs if is_intended(s)]
 
         weak_view = OutcomeConsensus(stev_elems)
-        ret = weak_view.get_consensus()
+        ret = weak_view.get_consensus(try_weak = False)
         return ret
 
     def has_consensus(self):
