@@ -160,3 +160,25 @@ class TestConsensus(unittest.TestCase):
         self.assertTrue(test.has_consensus())
         self.assertFalse(test.has_weak_consensus())
         self.assertEqual(test.get_consensus(), ("O","open"))
+
+    def test_8(self):
+        test = OutcomeConsensus([
+            {'state': "O", 'event': "open"},
+            {'state': "O", 'event': "open"},
+            {'state': "C", 'event': "sl_hit"},
+        ])
+
+        self.assertTrue(test.has_consensus())
+        self.assertFalse(test.has_weak_consensus())
+        self.assertEqual(test.get_consensus(), ("O","open"))
+
+        test = OutcomeConsensus([
+            {'state': "O", 'event': "open"},
+            {'state': "O", 'event': "open"},
+            {'state': "C", 'event': "sl_hit"},
+            {'state': "C", 'event': "sl_hit"}
+        ])
+
+        self.assertFalse(test.has_consensus())
+        self.assertTrue(test.has_weak_consensus())
+        pytest.raises(Exception, test.get_consensus)

@@ -21,13 +21,13 @@ def has_consensus(_vs):
     #  -- consensus when there is a majority 
     return len(_freqs) == size
 
-#  -- Consensus by tie (same event cardinality)
+#  -- Consensus by tie (same event cardinality), tie is of 2, 1
 def has_weak_consensus(_vs):
     vs = cardinality(_vs)
     _freq = lambda ys, y: len([yi for yi in ys if yi == y])
     _freqs = [(_freq(_vs, v)) for v in _vs]
     return cardinality(_freqs) == 1 and min(_freqs) > 1
-    
+
 class Outcome(dict):
     def __init__(self, hash, signer, pair, published_on, opened_on, invalidated_on,
                     last_checked, last_available, event, state):
@@ -77,6 +77,7 @@ class OutcomeConsensus(list):
                 "state": it[0],
             }
 
+    #  -- Checks for majority or for weak consensus without pending
     def get_consensus(self, try_weak = True):
         if not self.has_consensus():
             if not try_weak:
@@ -122,11 +123,12 @@ class OutcomeConsensus(list):
         ret = weak_view.get_consensus(try_weak = False)
         return ret
 
+    #  -- Returns true iff there is a majority event
     def has_consensus(self):
-        #sts = [s['state'] for s in self.cs]
         evs = [s['event'] for s in self.cs]
         return has_consensus(evs)
 
+    #  -- Returns true iff there is a tie and "pending" is part of the tie ("pending" is not really a good result so can be ignored)
     def has_weak_consensus(self):
         sts = [s['state'] for s in self.cs]
         evs = [s['event'] for s in self.cs]
