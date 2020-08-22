@@ -21,12 +21,12 @@ def has_consensus(_vs):
     #  -- consensus when there is a majority 
     return len(_freqs) == size
 
-#  -- Consensus by tie (same event cardinality), tie is of 2, 1
+#  -- Consensus by tie (same event cardinality)
 def has_weak_consensus(_vs):
     vs = cardinality(_vs)
     _freq = lambda ys, y: len([yi for yi in ys if yi == y])
     _freqs = [(_freq(_vs, v)) for v in _vs]
-    return cardinality(_freqs) == 1 and min(_freqs) > 1
+    return cardinality(_freqs) == 1 and min(_freqs) >= 1
 
 class Outcome(dict):
     def __init__(self, hash, signer, pair, published_on, opened_on, invalidated_on,
@@ -87,11 +87,12 @@ class OutcomeConsensus(list):
                 try:
                     return self.get_weak_consensus()
                 except:
-                    #  -- Try open over close
+                    #  -- Try close over open (greedy)
                     try:
-                        return self.get_weak_consensus(ev = 'open')
-                    except:
                         return self.get_weak_consensus(st = 'C')
+                    except:
+                        return self.get_weak_consensus(ev = 'open')
+                        
 
         state = [s['state'] for s in self.cs]
         event = [s['event'] for s in self.cs]
