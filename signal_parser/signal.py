@@ -1,9 +1,9 @@
 import json
 from datetime import datetime
 
-from . import myhash, mt4_date_converter, mt4_date_parser
-from .consensus import OutcomeConsensus
-from .noise import Noise
+from signal_parser import myhash, mt4_date_converter, mt4_date_parser
+from signal_parser.consensus import *
+from signal_parser.noise import *
 
 flags = {'AUD':'au', 'CAD':'ca', 'CHF':'ch',
          'EUR':'eu', 'GBP':'gb', 'USD':'us',

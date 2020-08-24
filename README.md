@@ -65,3 +65,15 @@ Roadmap
 ----
 * Support multiple signals with multiple targets per text: pass test_115 in fx_test.py
 + Test SignalList constructor for SignalList of SignalList
+
+Deployment via ZMQ REP
+----
+
+1. Build the container in .
+
+`sudo docker build -t kmels/sigpyparser_zmqrep containers/zmq_rep`
+
+2. Run the docker
+
+`sudo docker run -P -p 10001:10001 kmels/sigpyparser_zmqrep`
+

@@ -2,10 +2,10 @@ import hashlib
 import json
 
 from datetime import datetime
-from .signal import *
-from .noise import *
+from signal_parser.signal import *
+from signal_parser.noise import *
 
-from . import *
+from signal_parser import *
 
 valid_buy = lambda t, entry, sl, tp: t is "BUY" and entry > sl and tp > entry
 valid_sell = lambda t, entry, sl, tp: t is "SELL" and entry < sl and tp < entry

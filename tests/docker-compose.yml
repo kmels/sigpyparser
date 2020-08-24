@@ -1,0 +1,7 @@
+version: '2'
+services:
+  sigpyparser_zmq:
+    container_name: sigpyparser_zmq
+    image: "kmels/sigpyparser_zmq"
+    ports:
+      - "10001:10001"
