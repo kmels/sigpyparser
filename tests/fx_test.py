@@ -1,4 +1,5 @@
 import unittest
+import pytest
 from datetime import datetime
 
 from signal_parser import *
@@ -1220,9 +1221,9 @@ TP1 @ 22.36000
 TP2 @ 22.48000
 
 TP3 @ 22.60000""", Signal(22.24, 22.12, [22.36, 22.48, 22.60], today, "BUY", "p", "USDMXN"))
-    
+
     def test_126(self):
-        txt = """SELL EURUSD 1.1274 
+        txt = """SELL EURUSD 1.1274
 SL 1.1370
 TP 1.1156
 TP 1.0946
@@ -1257,7 +1258,104 @@ LIMIT ENTRY: 105.108"""
         self._testParser(txt1, Signal(0.68425, 0.68629, 0.6776, today, "SELL", "p", "CADCHF"))
         self._testParser(txt2, Signal(1.73228, 1.72982, 1.73770, today, "BUY", "p", "GBPCAD"))
         self._testParser(txt3, Signal(105.108, 105.322, 104.206, today, "SELL", "p", "USDJPY"))
+
+    def test_129(self):
+        txt = """Buy usdzar
+Tp 17.80
+Sl. 17.10
+Use 0.01 lot size or risk management"""
         
+
+    def test_130(self):
+        txt = """#USDCHF Buy 0.91500
+🔻 0.91000
+🔹 0.92350
+🔹 0.93850"""
+
+        #self._testCanonicalParser(txt, Signal(0.91500, 0.91000, [0.92350,0.93850], today, "BUY", "p", "USDCHF"))
+
+    def test_131(self):
+        txt = """#AUDNZD Sell 1.09700
+🔻 1.10500
+🔹 1.08900
+🔹 1.08300"""
+
+        self._testCanonicalParser(txt, Signal(1.0970, 1.1050, [1.0890, 1.0830], today, "SELL", "p", "AUDNZD"))
+
+        txt = """#AUDUSD Sell 0.72450
+🔻 0.72800
+🔹 0.71950
+🔹 0.70950"""
+
+        self._testCanonicalParser(txt, Signal(0.72450, 0.72800, [0.71950, 0.70950], today, "SELL", "p", "AUDUSD"))
+
+
+        txt = """#USDCAD Buy 1.31550
+🔻 1.31100
+🔹 1.32250
+🔹 1.33400"""
+
+        self._testCanonicalParser(txt, Signal(1.31550, 1.31100, [1.32250, 1.33400], today, "BUY", "p", "USDCAD"))
+
+
+        txt = """#NZDCHF Buy 0.59550
+🔻 0.59000
+🔹 0.59900
+🔹 0.60900"""
+
+        self._testCanonicalParser(txt, Signal(0.59550, 0.59000, [0.59900, 0.60900], today, "BUY", "p", "NZDCHF"))
+
+
+        txt = """#GBPUSD Sell 1.32500
+🔻 1.33700
+🔹 1.30200
+🔹 1.21000"""
+
+        self._testCanonicalParser(txt, Signal(1.32500, 1.33700, [1.30200, 1.21000], today, "SELL", "p", "GBPUSD"))
+
+
+    def test_132(self):
+
+        txt = """sell usdjpy now at 105.70
+sl..106.31
+tp..105.43
+tp2.. 105.11"""
+
+        self._testCanonicalParser(txt, Signal(105.7, 106.31, [105.43, 105.11], today, "SELL", "p", "USDJPY"))
+
+    @pytest.mark.skip(reason="no way of currently parsing this")
+    def test_133(self):
+        txt = """Dow Jones buy@27779
+
+Tp@27987.46
+
+Tp@28181.32
+
+Tp@28400.25
+
+Sl@27367.60"""
+
+        txt = """36. DJ buy limit 27200 -27150 Tp 27700-28150 sl 26950"""
+
+        self._testCanonicalParser(txt, Signal(27779, 27367.60, [27987.46, 28181.32, 28400.25], today, "BUY", "p", "US30"))
+    
+    @pytest.mark.skip(reason="no way of currently parsing this")
+    def test_134(self):
+        txt = """Sell nzdjpy 69.975
+🪐Sl 30 pips 
+🪐TP 60pips"""
+
+        self._testCanonicalParser(txt, Signal(69.975, 70.275, 69.375, today, "SELL", "p", "NZDJPY"))
+
+    def test_135(self):
+        txt = """#USDCHF Buy 0.91500 🔻 0.91000 🔹 0.92350 🔹 0.93850"""
+
+        self._testCanonicalParser(txt, Signal(0.9150, 0.91, [0.9235, 0.9385], today, "BUY", "p", "USDCHF"))
+
+        txt = """#GBPJPY Sell 139.400 🔻 140.400 🔹 135.900 🔹 131.800"""
+
+        self._testCanonicalParser(txt, Signal(139.400, 140.400, [135.900, 131.800], today, "SELL", "p", "GBPJPY"))
+
     def test_212(self):
         self._testParser("""Gbpjpy sell now 142.000
 Sl 143.000
