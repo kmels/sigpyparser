@@ -26,7 +26,11 @@ def has_weak_consensus(_vs):
     vs = cardinality(_vs)
     _freq = lambda ys, y: len([yi for yi in ys if yi == y])
     _freqs = [(_freq(_vs, v)) for v in _vs]
-    return cardinality(_freqs) == 1 and min(_freqs) >= 1
+    
+    is_tie = cardinality(_freqs) == 1 and min(_freqs) >= 1
+    max_freq = max(_freqs)
+    is_weak_able = any([_freq(_vs, wa) == max_freq for wa in _vs if wa in ['tp_hit','sl_hit','closed','open', 'O','P','C']])
+    return is_tie and is_weak_able
 
 class Outcome(dict):
     def __init__(self, hash, signer, pair, published_on, opened_on, invalidated_on,

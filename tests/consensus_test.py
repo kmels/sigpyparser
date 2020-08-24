@@ -231,3 +231,36 @@ class TestConsensus(unittest.TestCase):
         self.assertFalse(test.has_consensus())
         self.assertTrue(test.has_weak_consensus())
         self.assertEqual(test.get_consensus(), ("O","open"))
+
+    def test_11(self):
+        ev = ['invalid_tp_hit', 'invalid_tp_hit', 'invalid_tp_hit', 'invalid_tp_hit', 'invalid_tp_hit', 'tp_hit', 'tp_hit', 'tp_hit', 'tp_hit', 'tp_hit']
+        st = ['I', 'I', 'I', 'I', 'I', 'E', 'E', 'E', 'E', 'E']
+        test = OutcomeConsensus([
+            {'state': S, 'event': E} for S,E in
+            zip(st, ev) 
+        ])
+        self.assertFalse(test.has_consensus())
+        self.assertFalse(test.has_weak_consensus())
+        pytest.raises(Exception, test.get_consensus)
+
+        ev.append('invalid_tp_hit')
+        st.append('I')
+        test = OutcomeConsensus([
+            {'state': S, 'event': E} for S,E in
+            zip(st, ev) 
+        ])
+        self.assertTrue(test.has_consensus())
+        self.assertFalse(test.has_weak_consensus())
+        self.assertEqual(test.get_consensus(), ("I","invalid_tp_hit"))
+
+        ev.append('tp_hit')
+        st.append('E')
+        ev.append('tp_hit')
+        st.append('E')
+        test = OutcomeConsensus([
+            {'state': S, 'event': E} for S,E in
+            zip(st, ev) 
+        ])
+        self.assertTrue(test.has_consensus())
+        self.assertFalse(test.has_weak_consensus())
+        self.assertEqual(test.get_consensus(), ("E","tp_hit"))
