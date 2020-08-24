@@ -12,7 +12,7 @@ def crypto_tests_suite():
     unittest.TextTestRunner(verbosity=2).run(suite)
 
 def outcome_tests_suite():
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestOutcome)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestConsensus)
     unittest.TextTestRunner(verbosity=2).run(suite)
 
 def signal_tests_suite():

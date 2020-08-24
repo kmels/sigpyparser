@@ -34,17 +34,16 @@ cryptocurrencies.extend(binance_cryptos)
 crypto_pairs = [base+"/"+counter for base in cryptocurrencies for counter in cryptocurrencies if base is not counter]
 crypto_pairs.extend(['BTCUSD', 'XBTUSD'])
 
-def is_likely_price(price, _prices, pair):
+def is_likely_price(price, _prices, pair, max_deviation = 0.2):
     """
-    Returns true iff price change is less than 15% in FX
+    Returns true iff any _prices changes within a max_deviation of price
     """
     if pair in crypto_pairs:
         return True
     sims = 0
     for ref_entry in _prices:
         pct_change = ref_entry/price
-        #  -- Definition of likelyprice: within 200% reach (2 times it's value%)
-        likely = abs(1-pct_change) < 0.20 # 30 pct change 
+        likely = abs(1-pct_change) < max_deviation 
         if likely:
             sims += 1
     return sims >= 3
@@ -53,13 +52,6 @@ def find_setups(_prices, _tokens, text, pair, _type, d: datetime, p: ""):
     likely_prices = [p for p in _prices if is_likely_price(p, _prices, pair)]
     print(_tokens)
     print(likely_prices)
-
-    #  -- Require TP and SL only if text does not have exactly 3 numbers that make a setup
-    if len(likely_prices) != 3:
-        if not 'TP' in _tokens:
-            return Noise("Missing TP")
-        if not 'SL' in _tokens:
-            return Noise("Missing SL")
 
     #  -- If there are less than 3 price candidates,
     #  try to recover any other price by shifting decimal prices
@@ -176,7 +168,7 @@ def parseSignal(t: str, d: datetime = None, p: str = ""):
         return Noise("Empty text")
 
     # Extract date from signal in MT4 format
-    res = re.search("\d{4}\\.\d{2}\\.\\d{2} \d\d?:\d\d?", t)
+    res = re.search(r"\d{4}\.\d{2}\.\d{2} \d\d?:\d\d?", t)
     if res != None:
         start_pos = res.start()
         # Check: expiry date
@@ -336,12 +328,17 @@ def purifySetup(s : dict) -> dict:
 
 def getValidSetup(_type : str, pair: str, tokens: list, likely_prices: list, div : int = 1, d: datetime = None) -> dict:
     _prices = [t for t in tokens if isPrice(t)]
-    # Only one stop loss enabled
-    sl = getPriceFollowing(tokens, "SL", likely_prices)
-    # At least one TP
-    tp = getPriceFollowing(tokens, "TP", likely_prices)
-    entry = getPriceFollowing(tokens, pair, likely_prices, exclude=[sl, tp])
     
+    if "SL" in tokens or "TP" in tokens:
+        # Only one stop loss enabled
+        sl = getPriceFollowing(tokens, "SL", likely_prices)
+        tp = getPriceFollowing(tokens, "TP", likely_prices)
+        entry = getPriceFollowing(tokens, pair, likely_prices, exclude=[sl, tp])
+    else:
+        entry = getPriceFollowing(tokens, pair, likely_prices)
+        sl = getPriceFollowing(tokens, "SL", likely_prices, exclude=[entry])
+        tp = getPriceFollowing(tokens, "TP", likely_prices, exclude=[entry,sl])
+
     if not "BTC" in pair:
         precision = 5
     else:
