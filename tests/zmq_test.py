@@ -34,10 +34,10 @@ def test_zmq_sock(zmq_sock_url):
     context = zmq.Context()
     sock = context.socket(zmq.REQ)
     sock.connect(zmq_sock_url)
-    
+
     sock.send_string("BUY STOP EURUSD 1.20 SL 1.185 TP 1.22")
-    response = sock.recv()
-    
+    response = sock.recv_string()
+
     import json
     payload = json.loads(response)
     assert type(payload) is dict
