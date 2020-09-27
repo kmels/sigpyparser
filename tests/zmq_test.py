@@ -29,7 +29,7 @@ def zmq_sock_url(docker_ip, docker_services):
 import sys
 @pytest.mark.skipif(sys.version_info < (3,5),
                     reason="requires python3.5")
-def test_zmq_sock(zmq_sock_url):
+def todo_test_zmq_sock(zmq_sock_url):
     import zmq
     context = zmq.Context()
     sock = context.socket(zmq.REQ)

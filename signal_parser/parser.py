@@ -463,7 +463,7 @@ def normalizeText(t: str) -> str:
         if len(matches) > 0:
             t = re.sub(regex,"\\g<1>\\g<2>",t)
             break
-    t = re.sub("(\\d),(\\d)","\\g<1>.\\g<2>",t) # fix numbers
+    t = re.sub(" (\\d),(\\d) ","\\g<1>.\\g<2>",t) # fix numbers
     t = re.sub("_"," _ ",t)
     t = re.sub("TG","TP",t)
     t = re.sub("SL"," SL ",t)
@@ -485,6 +485,7 @@ def normalizeText(t: str) -> str:
     t = re.sub("TARGET"," TP ",t)
     t = re.sub("TAKE PROFIT"," TP ",t)
     t = re.sub("(\\d+) PIPS"," ", t) #TODO: Support relative pips parsing
+    t = re.sub("(\\d+)\\.(\\d+)\\.(\\d+)","\\g<1> \\g<2>.\\g<3>",t)
     t = re.sub("((\\d+)\\.(\\d+))"," \\g<1> ", t)
     t = re.sub("((\\d+)\\.(\\s+))"," ", t)
     t = re.sub("SELL"," SELL ", t)

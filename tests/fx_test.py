@@ -480,9 +480,10 @@ SL:1.2434""", Signal(1.2505,1.2434,1.2566,today,"BUY","p","USDCAD"))
     def test_42(self):
         sig1 = Signal(132.65, 133.5, 131.85, today, "SELL", "p", "EURJPY")
         sig2 = Signal(132.65, 133.5, 131.000, today, "SELL", "p", "EURJPY")
+        expected = SignalList([sig1,sig2])
         self._testParser("""EURJPY Sell @132.650,133.000
 TP:131.850,131.000
-SL:133.500""", SignalList([sig1,sig2]))
+SL:133.500""", expected)
 
     def test_43(self):
         sig1 = Signal(1.68015,1.67432,1.68321, today,"BUY","p","GBPAUD")
@@ -1355,6 +1356,23 @@ Sl@27367.60"""
         txt = """#GBPJPY Sell 139.400 🔻 140.400 🔹 135.900 🔹 131.800"""
 
         self._testCanonicalParser(txt, Signal(139.400, 140.400, [135.900, 131.800], today, "SELL", "p", "GBPJPY"))
+
+    def test_136(self):
+        txt = """GBPNZD BUY1.96300
+Tp1.1.96600
+Tp2.1.96950
+Tp3.1.97300
+Sl.   1.95800"""
+
+        self._testCanonicalParser(txt, Signal(1.96300, 1.9580, [1.96600, 1.96950, 1.97300], today, "BUY", "p", "GBPNZD"))
+
+        txt = """GBPUSD Buy 1.31500
+Tp1.1.31800
+Tp2.1.32200
+Tp3.1.32800
+SL   1.29600"""
+
+        self._testCanonicalParser(txt, Signal(1.31500, 1.29600, [1.31800, 1.32200, 1.32800], today, "BUY", "p", "GBPUSD"))
 
     def test_212(self):
         self._testParser("""Gbpjpy sell now 142.000
