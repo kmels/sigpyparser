@@ -32,7 +32,7 @@ steps:
 
 - script: |
     pip install pytest pytest-azurepipelines
-    pytest --junitxml=010.xml'
+    pytest --junitxml=010.xml
   displayName: 'pytest'
 - task: PublishTestResults@2
   displayName: 'Publish test result /010.xml'
