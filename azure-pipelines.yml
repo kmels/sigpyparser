@@ -32,25 +32,11 @@ steps:
 
 - script: |
     pip install pytest pytest-azurepipelines
-    pytest
+    pytest --junitxml=$(Build.StagingDirectory)/010.xml'
   displayName: 'pytest'
-
-- bash: 'pytest --junitxml=$(Build.StagingDirectory)/010.xml'
-  workingDirectory: '010_CrackingCodeBasic'
-  displayName: 'Run test 010'
- 
-- bash: 'pytest --junitxml=$(Build.StagingDirectory)/020.xml'
-  workingDirectory: '020_CrackingIntermediate'
-  displayName: 'Run test 020'
- 
 - task: PublishTestResults@2
   displayName: 'Publish test result /010.xml'
   inputs:
     testResultsFiles: '$(Build.StagingDirectory)/010.xml'
     testRunTitle: 010
  
-- task: PublishTestResults@2
-  displayName: 'Publish test result /020.xml'
-  inputs:
-    testResultsFiles: '$(Build.StagingDirectory)/020.xml'
-    testRunTitle: 020
