@@ -264,3 +264,32 @@ class TestConsensus(unittest.TestCase):
         self.assertTrue(test.has_consensus())
         self.assertFalse(test.has_weak_consensus())
         self.assertEqual(test.get_consensus(), ("E","tp_hit"))
+
+    def test_12(self):
+        ev =  ['invalid_tp_hit', 'invalid_tp_hit', 'invalid_tp_hit', 'invalid_tp_hit', 'sl_hit', 'pending', 'pending', 'pending', 'sl_hit', 'sl_hit', 'sl_hit', 'sl_hit']        
+        st =  ['I', 'I', 'I', 'I', 'E', 'P', 'P', 'P', 'E', 'E', 'E', 'E']
+
+        self.assertTrue(st.count('I') == 4)
+        self.assertTrue(st.count('E') == 5)
+        self.assertTrue(st.count('P') == 3)
+
+        test = OutcomeConsensus([
+            {'state': S, 'event': E} for S,E in
+            zip(st, ev) 
+        ])
+        self.assertTrue(test.has_consensus())
+        self.assertFalse(test.has_weak_consensus())
+
+        ev = ['invalid_tp_hit', 'invalid_tp_hit', 'invalid_tp_hit', 'invalid_tp_hit', 'sl_hit', 'pending', 'pending', 'pending', 'sl_hit', 'sl_hit', 'sl_hit', 'pending']
+        st = ['I', 'I', 'I', 'I', 'E', 'P', 'P', 'P', 'E','E', 'E', 'P']
+        self.assertTrue(st.count('I') == 4)
+        self.assertTrue(st.count('E') == 4)
+        self.assertTrue(st.count('P') == 4)
+
+        test = OutcomeConsensus([
+            {'state': S, 'event': E} for S,E in
+            zip(st, ev) 
+        ])
+        self.assertFalse(test.has_consensus())
+        self.assertTrue(test.has_weak_consensus())
+        self.assertEqual(test.get_weak_consensus(), ("I","invalid_tp_hit"))

@@ -11,15 +11,13 @@ def has_consensus(_vs):
     size = cardinality(_vs)
     if size == 1:
         return True
-    _freq = lambda ys, y: len([yi for yi in ys if yi == y])
-    _freqs = dict([(_freq(_vs, v),v) for v in _vs])
-
+    _freqs = {v: _vs.count(v) for v in _vs}
     #   -- only 1 frequency means a tie
-    if cardinality(_freqs) == 1:
+    if cardinality(_freqs.values()) == 1:
         return False
 
     #  -- consensus when there is a majority 
-    return len(_freqs) == size
+    return cardinality(_freqs.values()) == size
 
 #  -- Consensus by tie (same event cardinality)
 def has_weak_consensus(_vs):
@@ -133,9 +131,13 @@ class OutcomeConsensus(list):
         stev_elems = [{'state': s['state'], 'event': s['event']} for s in self.cs if is_intended(s)]
 
         weak_view = OutcomeConsensus(stev_elems)
-        ret = weak_view.get_consensus(try_weak = False)
-        return ret
-
+        try:
+            return weak_view.get_consensus(try_weak = False)
+        except Exception as e:
+             try:
+                 return self.get_weak_consensus(st = 'I')
+             except:
+                 raise e
     #  -- Returns true iff there is a majority event
     def has_consensus(self):
         evs = [s['event'] for s in self.cs]
