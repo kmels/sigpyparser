@@ -2,4 +2,4 @@ pandas
 requests
 pytest-docker
 zmq
-
+junitparser

@@ -28,7 +28,9 @@ steps:
 
 - script: |
     pip install pytest pytest-azurepipelines
-    pytest --junitxml=010.xml
+    pytest tests/consensus_test.py --junitxml=consensus.xml
+    pytest tests/fx_test.py::TestFXParser --junitxml=fx.xml
+    python combine_junit.py consensus.xml fx.xml -o=010.xml
   displayName: 'pytest'
 - task: PublishTestResults@2
   displayName: 'Publish test result /010.xml'
