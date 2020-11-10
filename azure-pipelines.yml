@@ -22,14 +22,17 @@ steps:
 - script: |
     python -m pip install --upgrade pip
     pip install -r requirements.txt
+    pytest 
   displayName: 'Install dependencies'
 
 - script: |
     pip install pytest pytest-azurepipelines
+    pytest tests/fx_test.py::TestFXParser::test_123 --junitxml=1.xml
+    python combine_junit.py 1.xml fx.xml r.xml
   displayName: 'pytest'
 - task: PublishTestResults@2
   displayName: 'Publish test results'
   inputs:
-    testResultsFiles: 'fx.xml'
+    testResultsFiles: '1.xml'
     testRunTitle: ALL
  
