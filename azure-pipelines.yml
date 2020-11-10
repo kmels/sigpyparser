@@ -26,12 +26,10 @@ steps:
 
 - script: |
     pip install pytest pytest-azurepipelines
-    pytest tests/consensus_test.py --junitxml=tst_consensus.xml
-    python combine_junit.py tst_consensus.xml fx.xml -o=agg.xml
   displayName: 'pytest'
 - task: PublishTestResults@2
   displayName: 'Publish test results'
   inputs:
-    testResultsFiles: 'agg.xml'
+    testResultsFiles: 'FX.xml'
     testRunTitle: ALL
  
