@@ -30,9 +30,5 @@ steps:
     pytest tests/fx_test.py::TestFXParser::test_123 --junitxml=1.xml
     python combine_junit.py 1.xml fx.xml -o=r.xml
   displayName: 'pytest'
-- task: PublishTestResults@2
-  displayName: 'Publish test results'
-  inputs:
-    testResultsFiles: '1.xml'
-    testRunTitle: ALL
+
  
