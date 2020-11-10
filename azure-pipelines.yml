@@ -10,8 +10,6 @@ pool:
   vmImage: 'ubuntu-latest'
 strategy:
   matrix:
-    Python36:
-      python.version: '3.6'
     Python37:
       python.version: '3.7'
 
@@ -29,11 +27,11 @@ steps:
 - script: |
     pip install pytest pytest-azurepipelines
     pytest tests/consensus_test.py --junitxml=tst_consensus.xml
-    pytest tests/fx_test.py::TestFXParser --junitxml=tst_fx.xml
+    python combine_junit.py tst_consensus.xml fx.xml -o=agg.xml
   displayName: 'pytest'
 - task: PublishTestResults@2
   displayName: 'Publish test results'
   inputs:
-    testResultsFiles: 'tst_*.xml'
+    testResultsFiles: 'agg.xml'
     testRunTitle: ALL
  
