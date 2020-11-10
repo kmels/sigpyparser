@@ -30,6 +30,6 @@ steps:
 - task: PublishTestResults@2
   displayName: 'Publish test results'
   inputs:
-    testResultsFiles: 'FX.xml'
+    testResultsFiles: 'fx.xml'
     testRunTitle: ALL
  
