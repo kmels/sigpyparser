@@ -2,9 +2,11 @@ language: python
 sudo: false
 
 python:
--  - 3.4
 -  - 3.5.9
 -  - 3.6.10
+-  - 3.7.5
+-  - 3.8.3
+-  - 3.9.1
 
 env:
   global:
