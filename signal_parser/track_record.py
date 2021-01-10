@@ -10,7 +10,7 @@ def mkpips(d,p):
         m /= 10
     return abs(m)
 
-def track_record_of_backtest_selection(signals):
+def track_record_of_selection(signals):
     init = datetime.now()
     signals = sorted(signals, key = lambda x: x.get('signal', {}).get('date',''))
 
