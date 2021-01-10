@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="sigpyparser",
-    version="0.0.2",
+    version="0.0.3",
     author="Carlos Eduardo López Camey",
     author_email="carlos@kmels.net",
     description="Extract market signals from text",
@@ -22,6 +22,7 @@ setuptools.setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Operating System :: OS Independent',
     ],
     packages=setuptools.find_packages(exclude=['tests']),

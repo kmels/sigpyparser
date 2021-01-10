@@ -293,3 +293,13 @@ class TestConsensus(unittest.TestCase):
         self.assertFalse(test.has_consensus())
         self.assertTrue(test.has_weak_consensus())
         self.assertEqual(test.get_weak_consensus(), ("I","invalid_tp_hit"))
+
+    def test_13(self):
+        ev = ['sl_hit', 'sl_hit', 'sl_hit', 'sl_hit', 'recheck', 'sl_hit', 'sl_hit', 'tp_hit', 'sl_hit', 'sl_hit', 'sl_hit', 'sl_hit', 'sl_hit', 'sl_hit', 'sl_hit']
+        st = ['C', 'C', 'C', 'C', 'R', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C']
+        test = OutcomeConsensus([
+            {'state': S, 'event': E} for S,E in
+            zip(st, ev)
+        ])
+        self.assertTrue(test.has_consensus())
+        self.assertFalse(test.has_weak_consensus())
