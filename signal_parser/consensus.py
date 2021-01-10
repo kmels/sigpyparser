@@ -12,12 +12,14 @@ def has_consensus(_vs):
     if size == 1:
         return True
     _freqs = {v: _vs.count(v) for v in _vs}
+    _counts = list(_freqs.values())
     #   -- only 1 frequency means a tie
-    if cardinality(_freqs.values()) == 1:
+    if cardinality(_counts) == 1:
         return False
-
     #  -- consensus when there is a majority 
-    return cardinality(_freqs.values()) == size
+    max_count = max(_counts)
+    return _counts.count(max_count) == 1
+    #return cardinality(_freqs.values()) == size
 
 #  -- Consensus by tie (same event cardinality)
 def has_weak_consensus(_vs):
