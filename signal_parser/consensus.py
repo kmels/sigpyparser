@@ -1,6 +1,11 @@
 import pandas as pd
 import datetime
 from datetime import datetime
+import json
+
+def serialize_date(o):
+    if isinstance(o, datetime):
+        return o.strftime("%Y.%m.%d %H:%M")
 
 cardinality = lambda xs: len(set(xs))
 
@@ -58,8 +63,11 @@ class OutcomeConsensus(list):
             raise ValueError("Expecting parameter to be of type: list")
         self.cs = cs
 
+    def __repr__(self):
+        return json.dumps(self.json(), default = serialize_date)
+
     def __str__(self):
-        return self.cs.__str__()
+        return json.dumps(self.json(), default = serialize_date)
 
     def json(self):
         it = self.get_consensus()
